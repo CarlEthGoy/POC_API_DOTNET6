@@ -49,11 +49,10 @@ builder.Services.AddSwaggerGen(c =>
 #region VERSIONNING
 builder.Services.AddApiVersioning(setup =>
 {
-  setup.DefaultApiVersion = new ApiVersion(1, 0);
+  setup.DefaultApiVersion = new ApiVersion(2, 0);
   setup.AssumeDefaultVersionWhenUnspecified = true;
   setup.ReportApiVersions = true;
   setup.ApiVersionReader = new UrlSegmentApiVersionReader();
-  setup.UseApiBehavior = false;
 });
 
 builder.Services.AddVersionedApiExplorer(options =>

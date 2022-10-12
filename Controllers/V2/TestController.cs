@@ -1,4 +1,5 @@
-﻿using API.DDL;
+﻿using API.Cryptography;
+using API.DDL;
 using API.Models.V2;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -15,10 +16,34 @@ namespace API.Controllers.V2
   public class TestController : ControllerBase
   {
     private IUserRepository _repository;
-    public TestController(IUserRepository repository)
+    private IConfiguration _configuration;
+
+    public TestController(IUserRepository repository, IConfiguration configuration)
     {
       _repository = repository;
+      _configuration = configuration;
     }
+
+    [MapToApiVersion("2.0")]
+    [Route("/login")]
+    [HttpGet]
+    public bool Login(string hashString, string password)
+    {
+      CryptographyUtil cryptographyUtils = new(_configuration);
+      bool isAuthenticated = cryptographyUtils.VerifyHash(hashString, password);
+      return isAuthenticated;
+    }
+
+    [MapToApiVersion("2.0")]
+    [Route("/create-hash")]
+    [HttpPost]
+    public string CreateHash(string password)
+    {
+      CryptographyUtil cryptographyUtils = new(_configuration);
+      var hashedPassword = cryptographyUtils.HashPassword(password);
+      return hashedPassword;
+    }
+
 
     [MapToApiVersion("2.0")]
     [HttpGet]

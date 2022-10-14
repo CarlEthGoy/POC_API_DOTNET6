@@ -1,5 +1,6 @@
-﻿using API.Cryptography;
-using API.DDL;
+﻿using API.BLL;
+using API.Cryptography;
+using API.Database;
 using API.Models.V2;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,38 +28,43 @@ namespace API.Controllers.V2
     [MapToApiVersion("2.0")]
     [Route("/login")]
     [HttpGet]
-    public bool Login(string hashString, string password)
+    public async Task<bool> Login(string username, string password)
     {
-      CryptographyUtil cryptographyUtils = new(_configuration);
-      bool isAuthenticated = cryptographyUtils.VerifyHash(hashString, password);
+      BLLUser bllUser = new(_repository);
+      UserModel user = await bllUser.GetByUsername(username);
+
+      bool isAuthenticated = CryptographyUtil.VerifyHash(password, user.salt, user.hash);
+
       return isAuthenticated;
     }
 
     [MapToApiVersion("2.0")]
-    [Route("/create-hash")]
-    [HttpPost]
-    public string CreateHash(string password)
-    {
-      CryptographyUtil cryptographyUtils = new(_configuration);
-      var hashedPassword = cryptographyUtils.HashPassword(password);
-      return hashedPassword;
-    }
-
-
-    [MapToApiVersion("2.0")]
     [HttpGet]
-    public List<User> GetAll()
+    public async Task<List<UserModel>> GetAll()
     {
-      var test = _repository.GetAll();
-      return test.Result.ToList();
+      var test = await _repository.GetAll();
+      return test.ToList();
+    }
+
+    [MapToApiVersion("2.0")]
+    [Route("/{id}")]
+    [HttpGet]
+    public async Task<UserModel> GetById(int id)
+    {
+      BLLUser bllUser = new(_repository);
+      UserModel user = await bllUser.GetById(id);
+
+      return user;
     }
 
     [MapToApiVersion("2.0")]
     [HttpPost]
-    public User Create(User user)
+    public async Task<string> Create(UserViewModel user)
     {
-      var uuidCreated = _repository.CreateUser(user);
-      return uuidCreated.Result;
+      BLLUser bllUser = new(_repository);
+      string createdUserId = await bllUser.CreateUser(user);
+
+      return createdUserId;
     }
   }
 }

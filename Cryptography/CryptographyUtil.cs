@@ -1,40 +1,35 @@
-﻿using Isopoh.Cryptography.Argon2;
+﻿using Konscious.Security.Cryptography;
 using System.Security.Cryptography;
 using System.Text;
 
 namespace API.Cryptography
 {
-  public class CryptographyUtil
+  public static class CryptographyUtil
   {
-    private readonly IConfiguration _configuration;
-    private readonly RandomNumberGenerator Rng = RandomNumberGenerator.Create();
-
-    public CryptographyUtil(IConfiguration configuration)
+    public static byte[] GenerateSalt()
     {
-      _configuration = configuration;
+      var buffer = new byte[16];
+      var rng = RandomNumberGenerator.Create();
+      rng.GetBytes(buffer);
+      return buffer;
     }
 
-
-    public string? HashPassword(string password)
+    public static byte[] HashPassword(string password, byte[] salt)
     {
-      var passwordHash = Argon2.Hash(password);
-      if (Argon2.Verify(passwordHash, password))
-      {
-        return passwordHash;
-      }
+      var argon2 = new Argon2id(Encoding.UTF8.GetBytes(password));
 
-      return "";
+      argon2.Salt = salt;
+      argon2.DegreeOfParallelism = 8; // four cores
+      argon2.Iterations = 4;
+      argon2.MemorySize = 1024 * 1024; // 1 GB
+
+      return argon2.GetBytes(16);
     }
 
-    public bool VerifyHash(string hashString, string password)
+    public static bool VerifyHash(string password, byte[] salt, byte[] hash)
     {
-      byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
-      if (Argon2.Verify(hashString, passwordBytes, 5))
-      {
-        return true;
-      }
-
-      return false;
+      var newHash = HashPassword(password, salt);
+      return hash.SequenceEqual(newHash);
     }
   }
 }

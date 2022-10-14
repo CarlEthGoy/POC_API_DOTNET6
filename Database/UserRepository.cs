@@ -1,13 +1,19 @@
 ﻿using API.Models.V2;
 using Neo4j.Driver;
 
-namespace API.DDL
+namespace API.Database
 {
   public interface IUserRepository
   {
-    Task<IEnumerable<User>> GetAll();
+    Task<IEnumerable<UserModel>> GetAll();
 
-    Task<User> CreateUser(User userToAdd);
+    Task<string> CreateUser(UserModel userToAdd);
+
+    Task<UserModel> GetById(int id);
+
+    Task<UserModel> GetByUsername(string username);
+
+    Task<bool> UsernameAlreadyUsed(string username);
   }
 
   public class UserRepository : IUserRepository
@@ -17,71 +23,159 @@ namespace API.DDL
     private readonly IDriver _driver;
 
     #region Database Actions
-    public async Task<User> CreateUser(User userToAdd)
+    public async Task<string> CreateUser(UserModel userToAdd)
     {
-      User createdUser = new();
-
-      var query = @$"CREATE (user:User {{id: '{Guid.NewGuid()}', name: '{userToAdd.name}', hash: '{userToAdd.hash}'}}) RETURN user";
-
-      await using var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration.GetValue<string>("Neo4JSettings:Database")));
       try
       {
-        var writeResults = await session.ExecuteWriteAsync(async tx =>
+        string createdUserId = "";
+
+        //Valider que le username n'existe pas deja!
+        if (await UsernameAlreadyUsed(userToAdd.username))
         {
-          var result = await tx.RunAsync(query);
-          return await result.ToListAsync();
-        });
+          throw new Exception($"This username is already in use : {userToAdd.username}");
+        }
 
-        if (writeResults == null || writeResults.Count == 0 || writeResults.FirstOrDefault() == null) { throw new Exception("Creation failed."); }
+        var query = "CREATE (user:User {username: $username, name: $name, hash: $hash, salt: $salt}) RETURN user";
+        var parameters = new Dictionary<string, object> {
+        { "username", userToAdd.username},
+        { "name", userToAdd.name },
+        { "hash", userToAdd.hash },
+        { "salt", userToAdd.salt }
+      };
 
-        createdUser = new User
-        {
-          name = writeResults.First()["user"].As<INode>().Properties["name"].As<string>(),
-          hash = writeResults.First()["user"].As<INode>().Properties["hash"].As<string>(),
-          uuid = new Guid(writeResults.First()["user"].As<INode>().Properties["id"].As<string>()),
-        };
+        List<IRecord> writeResults = await Neo4J.RunExecuteWriteAsync(_driver, _configuration, query, parameters);
 
+        createdUserId = writeResults.First()["user"].As<INode>().ElementId.As<string>();
+
+        return createdUserId;
       }
       catch (Neo4jException ex)
       {
         throw new Exception(ex.Message);
       }
-
-      return createdUser;
     }
 
-    public async Task<IEnumerable<User>> GetAll()
+    public async Task<IEnumerable<UserModel>> GetAll()
     {
-      var lstUser = new List<User>();
-
-      var query = @"MATCH (user:User) RETURN user";
-
-      await using var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration.GetValue<string>("Neo4JSettings:Database")));
       try
       {
-        var readResults = await session.ExecuteReadAsync(async tx =>
-        {
-          var result = await tx.RunAsync(query);
-          return await result.ToListAsync();
-        });
+        var lstUser = new List<UserModel>();
+
+        var query = @"MATCH (user:User) RETURN user";
+
+        List<IRecord> readResults = await Neo4J.RunExecuteReadAsync(_driver, _configuration, query);
 
         foreach (var result in readResults)
         {
-          var user = new User
+          var user = new UserModel
           {
+            username = result["user"].As<INode>().Properties["username"].As<string>(),
             name = result["user"].As<INode>().Properties["name"].As<string>(),
-            hash = result["user"].As<INode>().Properties["hash"].As<string>(),
-            uuid = new Guid(result["user"].As<INode>().Properties["id"].As<string>()),
+            hash = result["user"].As<INode>().Properties["hash"].As<byte[]>(),
+            salt = result["user"].As<INode>().Properties["salt"].As<byte[]>(),
           };
           lstUser.Add(user);
         }
+
+        return lstUser;
       }
       catch (Neo4jException ex)
       {
         throw new Exception(ex.Message);
       }
+    }
 
-      return lstUser;
+    public async Task<UserModel> GetById(int id)
+    {
+      try
+      {
+        UserModel? user = null;
+
+        var query = @$"MATCH (user:User) 
+                     WHERE id(user) = $id
+                     RETURN user";
+
+        var parameters = new Dictionary<string, object> {
+          { "id", id}
+        };
+
+
+        List<IRecord> readResults = await Neo4J.RunExecuteReadAsync(_driver, _configuration, query, parameters);
+
+        if (readResults == null || readResults.Count == 0) { throw new Exception($"There is no user with the id {id}"); }
+
+        user = new UserModel
+        {
+          username = readResults.First()["user"].As<INode>().Properties["username"].As<string>(),
+          name = readResults.First()["user"].As<INode>().Properties["name"].As<string>(),
+          hash = readResults.First()["user"].As<INode>().Properties["hash"].As<byte[]>(),
+          salt = readResults.First()["user"].As<INode>().Properties["salt"].As<byte[]>(),
+        };
+        return user;
+      }
+      catch (Neo4jException ex)
+      {
+        throw new Exception(ex.Message);
+      }
+    }
+
+    public async Task<UserModel> GetByUsername(string username)
+    {
+      try
+      {
+        if (string.IsNullOrWhiteSpace(username)) { throw new Exception($"username field is required"); }
+
+        UserModel? user = null;
+
+        var query = @$"MATCH (user:User) 
+                     WHERE user.username = $username
+                     RETURN user";
+        var parameters = new Dictionary<string, object> {
+          { "username", username}
+        };
+
+        List<IRecord> readResults = await Neo4J.RunExecuteReadAsync(_driver, _configuration, query, parameters);
+
+        if (readResults == null || readResults.Count == 0) { throw new Exception($"There is no user with the username {username}"); }
+
+        user = new UserModel
+        {
+          username = readResults.First()["user"].As<INode>().Properties["username"].As<string>(),
+          name = readResults.First()["user"].As<INode>().Properties["name"].As<string>(),
+          hash = readResults.First()["user"].As<INode>().Properties["hash"].As<byte[]>(),
+          salt = readResults.First()["user"].As<INode>().Properties["salt"].As<byte[]>(),
+        };
+
+        return user;
+      }
+      catch (Neo4jException ex)
+      {
+        throw new Exception(ex.Message);
+      }
+    }
+
+    public async Task<bool> UsernameAlreadyUsed(string username)
+    {
+
+      try
+      {
+        if (string.IsNullOrWhiteSpace(username)) { throw new Exception($"username field is required"); }
+
+        var query = @$"MATCH (user:User) 
+                     WHERE user.username = $username
+                     RETURN user";
+        var parameters = new Dictionary<string, object> {
+          { "username", username}
+        };
+
+        List<IRecord> readResults = await Neo4J.RunExecuteReadAsync(_driver, _configuration, query, parameters);
+
+        return readResults != null && readResults.Count > 0;
+      }
+      catch (Neo4jException ex)
+      {
+        throw new Exception(ex.Message);
+      }
     }
     #endregion
 
@@ -103,6 +197,7 @@ namespace API.DDL
       Dispose(true);
       GC.SuppressFinalize(this);
     }
+
     protected virtual void Dispose(bool disposing)
     {
       if (_disposed)

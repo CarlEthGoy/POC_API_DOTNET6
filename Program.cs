@@ -14,7 +14,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
   c.SwaggerDoc("v1", new OpenApiInfo { Title = "API", Version = "v1" });
-  c.SwaggerDoc("v2", new OpenApiInfo { Title = "API", Version = "v2" });
+  //c.SwaggerDoc("v2", new OpenApiInfo { Title = "API", Version = "v2" });
 
   c.AddSecurityDefinition("oauth2", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
   {
@@ -49,7 +49,7 @@ builder.Services.AddSwaggerGen(c =>
 #region VERSIONNING
 builder.Services.AddApiVersioning(setup =>
 {
-  setup.DefaultApiVersion = new ApiVersion(2, 0);
+  setup.DefaultApiVersion = new ApiVersion(1, 0);
   setup.AssumeDefaultVersionWhenUnspecified = true;
   setup.ReportApiVersions = true;
   setup.ApiVersionReader = new UrlSegmentApiVersionReader();
@@ -79,7 +79,7 @@ if (app.Environment.IsDevelopment())
   app.UseSwaggerUI(c =>
   {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-    c.SwaggerEndpoint("/swagger/v2/swagger.json", "v2");
+    //c.SwaggerEndpoint("/swagger/v2/swagger.json", "v2");
     c.OAuthClientId(builder.Configuration["SwaggerAzureAd:ClientId"]);
     c.OAuthUsePkce();
     //c.OAuthScopeSeparator(" ");

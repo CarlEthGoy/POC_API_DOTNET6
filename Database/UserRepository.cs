@@ -1,9 +1,9 @@
-﻿using API.Models.V2;
+﻿using API.Models.V1;
 using Neo4j.Driver;
 
 namespace API.Database
 {
-  public interface IUserRepository
+    public interface IUserRepository
   {
     Task<IEnumerable<UserModel>> GetAll();
 

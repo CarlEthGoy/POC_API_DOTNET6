@@ -1,11 +1,58 @@
 ﻿using Konscious.Security.Cryptography;
+using PasswordGenerator;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace API.Cryptography
 {
+
   public static class CryptographyUtil
   {
+    private enum CharType
+    {
+      Lowercase,
+      Uppercase,
+      Digit,
+      Special
+    }
+    public enum EnumPassworrdComplexity
+    {
+      Low = 8,
+      Medium = 16,
+      High = 24,
+      Extreme = 32
+    }
+
+    private static readonly Dictionary<CharType, Regex> _chars = new Dictionary<CharType, Regex>()
+        {
+            { CharType.Lowercase, new Regex(@"[abcdefghijklmnopqrstuvwxyz]")},
+            { CharType.Uppercase, new Regex(@"[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")},
+            { CharType.Digit, new Regex(@"[0123456789]")},
+            { CharType.Special, new Regex(@"[!@#$%^&*()-_=+{}[]?<>.,]")}
+        };
+
+    public static bool IsPasswordValid(string password, EnumPassworrdComplexity complexity)
+    {
+      var lowercaseValid = _chars[CharType.Lowercase].IsMatch(password);
+      var uppercaseValid = _chars[CharType.Uppercase].IsMatch(password);
+      var digitValid = _chars[CharType.Digit].IsMatch(password);
+      var specialValid = _chars[CharType.Special].IsMatch(password);
+      if (password.Length >= (int)complexity)
+      {
+
+      }
+
+      return lowercaseValid && uppercaseValid && digitValid && specialValid;
+    }
+
+    public static string GenerateRandomPassword(EnumPassworrdComplexity complexity)
+    {
+      Password pwd = new(true, true, true, true, (int)complexity);
+      string password = pwd.Next();
+      return password;
+    }
+
     public static byte[] GenerateSalt()
     {
       var buffer = new byte[16];

@@ -1,10 +1,10 @@
 ﻿using API.Cryptography;
 using API.Database;
-using API.Models.V2;
+using API.Models.V1;
 
 namespace API.BLL
 {
-  public class BLLUser
+    public class BLLUser
   {
     private IUserRepository _repository;
 
@@ -15,6 +15,12 @@ namespace API.BLL
 
     public async Task<string> CreateUser(UserViewModel userViewModel)
     {
+      bool isPasswordValid = CryptographyUtil.IsPasswordValid(userViewModel.password, CryptographyUtil.EnumPassworrdComplexity.Medium);
+      if (!isPasswordValid)
+      {
+        throw new Exception("Password is invalid.");
+      }
+
       byte[] salt = CryptographyUtil.GenerateSalt();
 
       UserModel userModel = new UserModel

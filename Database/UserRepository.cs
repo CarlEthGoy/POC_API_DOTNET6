@@ -1,9 +1,10 @@
-﻿using API.Models.V1;
+﻿using API.Core;
+using API.Models.V1;
 using Neo4j.Driver;
 
 namespace API.Database
 {
-    public interface IUserRepository
+  public interface IUserRepository
   {
     Task<IEnumerable<UserModel>> GetAll();
 
@@ -16,7 +17,7 @@ namespace API.Database
     Task<bool> UsernameAlreadyUsed(string username);
   }
 
-  public class UserRepository : IUserRepository
+  public class UserRepository : MustInitialize<IConfiguration>, IUserRepository
   {
     private readonly IConfiguration _configuration;
     private bool _disposed = false;
@@ -181,7 +182,7 @@ namespace API.Database
 
 
     #region Constructeur et Dispose
-    public UserRepository(IConfiguration configuration)
+    public UserRepository(IConfiguration configuration) : base(configuration)
     {
       _configuration = configuration;
       string uri = _configuration.GetValue<string>("Neo4JSettings:Connection");

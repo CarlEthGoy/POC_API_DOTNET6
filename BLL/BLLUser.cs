@@ -1,14 +1,24 @@
-﻿using API.Cryptography;
+﻿using API.Core;
+using API.Cryptography;
 using API.Database;
 using API.Models.V1;
 
 namespace API.BLL
 {
-    public class BLLUser
+  public interface IBLLUser
+  {
+    public Task<string> CreateUser(UserViewModel userViewModel);
+
+    public Task<UserModel> GetById(int id);
+
+    public Task<UserModel> GetByUsername(string username);
+  }
+
+  public class BLLUser : MustInitialize<IUserRepository>, IBLLUser
   {
     private IUserRepository _repository;
 
-    public BLLUser(IUserRepository repository)
+    public BLLUser(IUserRepository repository) : base(repository)
     {
       _repository = repository;
     }

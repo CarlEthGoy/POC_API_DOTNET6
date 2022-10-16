@@ -1,4 +1,5 @@
-﻿using Konscious.Security.Cryptography;
+﻿using API.Enum;
+using Konscious.Security.Cryptography;
 using PasswordGenerator;
 using System.Security.Cryptography;
 using System.Text;
@@ -9,35 +10,20 @@ namespace API.Cryptography
 
   public static class CryptographyUtil
   {
-    private enum CharType
-    {
-      Lowercase,
-      Uppercase,
-      Digit,
-      Special
-    }
-    public enum EnumPassworrdComplexity
-    {
-      Low = 8,
-      Medium = 16,
-      High = 24,
-      Extreme = 32
-    }
-
-    private static readonly Dictionary<CharType, Regex> _chars = new Dictionary<CharType, Regex>()
+    private static readonly Dictionary<EnumCharType, Regex> _chars = new Dictionary<EnumCharType, Regex>()
         {
-            { CharType.Lowercase, new Regex(@"[abcdefghijklmnopqrstuvwxyz]")},
-            { CharType.Uppercase, new Regex(@"[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")},
-            { CharType.Digit, new Regex(@"[0123456789]")},
-            { CharType.Special, new Regex(@"[!@#$%^&*()-_=+{}[]?<>.,]")}
+            { EnumCharType.Lowercase, new Regex(@"[abcdefghijklmnopqrstuvwxyz]")},
+            { EnumCharType.Uppercase, new Regex(@"[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")},
+            { EnumCharType.Digit, new Regex(@"[0123456789]")},
+            { EnumCharType.Special, new Regex(@"[!@#$%^&*()-_=+{}[]?<>.,]")}
         };
 
     public static bool IsPasswordValid(string password, EnumPassworrdComplexity complexity)
     {
-      var lowercaseValid = _chars[CharType.Lowercase].IsMatch(password);
-      var uppercaseValid = _chars[CharType.Uppercase].IsMatch(password);
-      var digitValid = _chars[CharType.Digit].IsMatch(password);
-      var specialValid = _chars[CharType.Special].IsMatch(password);
+      var lowercaseValid = _chars[EnumCharType.Lowercase].IsMatch(password);
+      var uppercaseValid = _chars[EnumCharType.Uppercase].IsMatch(password);
+      var digitValid = _chars[EnumCharType.Digit].IsMatch(password);
+      var specialValid = _chars[EnumCharType.Special].IsMatch(password);
       if (password.Length >= (int)complexity)
       {
 

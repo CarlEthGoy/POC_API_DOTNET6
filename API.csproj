@@ -25,7 +25,6 @@
 
   <ItemGroup>
     <Folder Include="Controllers\V2\" />
-    <Folder Include="Enum\" />
     <Folder Include="Models\V2\" />
   </ItemGroup>
 

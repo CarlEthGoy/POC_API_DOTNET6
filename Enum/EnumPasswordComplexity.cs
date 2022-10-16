@@ -1,6 +1,6 @@
 ﻿namespace API.Enum
 {
-  public enum EnumPassworrdComplexity
+  public enum EnumPasswordComplexity
   {
     Low = 8,
     Medium = 16,

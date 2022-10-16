@@ -8,7 +8,7 @@ namespace API.Database
     {
       try
       {
-        await using var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration.GetValue<string>("Neo4JSettings:Database")));
+        await using var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
         var writeResults = await session.ExecuteWriteAsync(async tx =>
         {
           var result = await tx.RunAsync(query, parameters);
@@ -29,7 +29,7 @@ namespace API.Database
     {
       try
       {
-        await using var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration.GetValue<string>("Neo4JSettings:Database")));
+        await using var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
         var readResults = await session.ExecuteReadAsync(async tx =>
         {
           var result = await tx.RunAsync(query);
@@ -48,7 +48,7 @@ namespace API.Database
     {
       try
       {
-        await using var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration.GetValue<string>("Neo4JSettings:Database")));
+        await using var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
         var readResults = await session.ExecuteReadAsync(async tx =>
         {
           var result = await tx.RunAsync(query, parameters);

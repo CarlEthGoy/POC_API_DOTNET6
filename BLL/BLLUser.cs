@@ -1,6 +1,7 @@
 ﻿using API.Core;
 using API.Cryptography;
 using API.Database;
+using API.Enum;
 using API.Models.V1;
 
 namespace API.BLL
@@ -25,7 +26,7 @@ namespace API.BLL
 
     public async Task<string> CreateUser(UserViewModel userViewModel)
     {
-      bool isPasswordValid = CryptographyUtil.IsPasswordValid(userViewModel.password, CryptographyUtil.EnumPassworrdComplexity.Medium);
+      bool isPasswordValid = CryptographyUtil.IsPasswordValid(userViewModel.password, EnumPasswordComplexity.Medium);
       if (!isPasswordValid)
       {
         throw new Exception("Password is invalid.");

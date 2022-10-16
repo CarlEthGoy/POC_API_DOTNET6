@@ -45,5 +45,15 @@ namespace API.Controllers.V1
 
       return createdUserId;
     }
+
+    [MapToApiVersion("1.0")]
+    [HttpGet]
+    public async Task<UserModel> GetById(int id)
+    {
+      BLLUser bllUser = new(_repository);
+      var user = await bllUser.GetById(id);
+
+      return user;
+    }
   }
 }

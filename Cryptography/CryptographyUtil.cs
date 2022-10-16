@@ -18,7 +18,7 @@ namespace API.Cryptography
             { EnumCharType.Special, new Regex(@"[!@#$%^&*()-_=+{}[]?<>.,]")}
         };
 
-    public static bool IsPasswordValid(string password, EnumPassworrdComplexity complexity)
+    public static bool IsPasswordValid(string password, EnumPasswordComplexity complexity)
     {
       var lowercaseValid = _chars[EnumCharType.Lowercase].IsMatch(password);
       var uppercaseValid = _chars[EnumCharType.Uppercase].IsMatch(password);
@@ -32,7 +32,7 @@ namespace API.Cryptography
       return lowercaseValid && uppercaseValid && digitValid && specialValid;
     }
 
-    public static string GenerateRandomPassword(EnumPassworrdComplexity complexity)
+    public static string GenerateRandomPassword(EnumPasswordComplexity complexity)
     {
       Password pwd = new(true, true, true, true, (int)complexity);
       string password = pwd.Next();

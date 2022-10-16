@@ -185,9 +185,9 @@ namespace API.Database
     public UserRepository(IConfiguration configuration) : base(configuration)
     {
       _configuration = configuration;
-      string uri = _configuration.GetValue<string>("Neo4JSettings:Connection");
-      string user = _configuration.GetValue<string>("Neo4JSettings:User");
-      string password = _configuration.GetValue<string>("Neo4JSettings:Password");
+      string uri = _configuration["Neo4JSettings:Connection"];
+      string user = _configuration["Neo4JSettings:User"];
+      string password = _configuration["Neo4JSettings:Password"];
 
       _driver = GraphDatabase.Driver(uri, AuthTokens.Basic(user, password));
     }

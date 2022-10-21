@@ -1,0 +1,16 @@
+﻿[*.cs]
+
+# CS8600: Converting null literal or possible null value to non-nullable type.
+dotnet_diagnostic.CS8600.severity = suggestion
+
+# NUnit2003: Consider using Assert.That(expr, Is.True) instead of Assert.IsTrue(expr)
+dotnet_diagnostic.NUnit2003.severity = none
+
+# NUnit2043: Use ComparisonConstraint for better assertion messages in case of failure
+dotnet_diagnostic.NUnit2043.severity = silent
+
+# IDE0060: Remove unused parameter
+dotnet_diagnostic.IDE0060.severity = silent
+
+# NUnit2010: Use EqualConstraint for better assertion messages in case of failure
+dotnet_diagnostic.NUnit2010.severity = silent

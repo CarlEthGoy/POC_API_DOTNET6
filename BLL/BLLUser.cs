@@ -1,5 +1,4 @@
-﻿using API.Core;
-using API.Cryptography;
+﻿using API.Cryptography;
 using API.Database;
 using API.Enum;
 using API.Models.V1;
@@ -8,54 +7,56 @@ namespace API.BLL
 {
   public interface IBLLUser
   {
-    public Task<string> CreateUser(UserViewModel userViewModel);
-
-    public Task<UserModel> GetById(int id);
-
-    public Task<UserModel> GetByUsername(string username);
+    Task<int?> CreateUser(IUserViewModel userViewModel);
+    Task<bool> DeleteUserById(int id);
+    Task<IUserModel?> GetUserById(int id);
+    Task<IUserModel?> GetByUsername(string username);
   }
 
-  public class BLLUser : MustInitialize<IUserRepository>, IBLLUser
+  public class BLLUser : IBLLUser
   {
-    private IUserRepository _repository;
+    private readonly IUserRepository _userRepository;
 
-    public BLLUser(IUserRepository repository) : base(repository)
+    public BLLUser(IUserRepository repository)
     {
-      _repository = repository;
+      _userRepository = repository;
     }
 
-    public async Task<string> CreateUser(UserViewModel userViewModel)
+    public async Task<IUserModel?> GetUserById(int id)
     {
-      bool isPasswordValid = CryptographyUtil.IsPasswordValid(userViewModel.password, EnumPasswordComplexity.Medium);
+      var user = await _userRepository.GetUserById(id);
+      return user;
+    }
+
+    public async Task<int?> CreateUser(IUserViewModel userViewModel)
+    {
+      bool isPasswordValid = CryptographyUtil.Instance.IsPasswordValid(userViewModel.Password, EnumPasswordComplexity.Medium);
       if (!isPasswordValid)
       {
         throw new Exception("Password is invalid.");
       }
 
-      byte[] salt = CryptographyUtil.GenerateSalt();
+      IUserModel userModel = _userRepository.GenerateUserToCreate(userViewModel);
 
-      UserModel userModel = new UserModel
+      // Valider que le username n'existe pas!
+      if (await _userRepository.IsUsernameAlreadyUsed(userViewModel.Username))
       {
-        username = userViewModel.username,
-        hash = CryptographyUtil.HashPassword(userViewModel.password, salt),
-        name = userViewModel.name,
-        salt = salt,
-      };
+        throw new Exception($"This username is already in use : {userViewModel.Username}");
+      }
 
-      string createdUserId = await _repository.CreateUser(userModel);
+      int? createdUserId = await _userRepository.CreateUser(userModel);
       return createdUserId;
     }
 
-    public async Task<UserModel> GetById(int id)
+    public async Task<bool> DeleteUserById(int id)
     {
-      UserModel createdUser = await _repository.GetById(id);
-      return createdUser;
+      return await _userRepository.DeleteUserById(id);
     }
 
-    public async Task<UserModel> GetByUsername(string username)
+    public async Task<IUserModel?> GetByUsername(string username)
     {
-      UserModel createdUser = await _repository.GetByUsername(username);
-      return createdUser;
+      var user = await _userRepository.GetUserByUsername(username);
+      return user;
     }
 
   }

@@ -6,10 +6,11 @@ namespace API.Database
 {
   public interface IPasswordRepository
   {
-    Task<int?> CreatePassword(IPasswordModel passwordToAdd);
-    Task<bool> DeletePasswordById(int passwordId);
-    Task<IPasswordModel?> GetById(int id);
-    Task<List<IPasswordModel>> GetAllForUserId(int userId);
+    Task<int> CreatePassword(IPasswordModel passwordToAdd);
+    Task<bool> DeletePasswordById(int password_id);
+    Task<IPasswordModel> GetPasswordById(int password_id);
+    Task<bool> CreateRelationshipMember(int vault_id, int password_id);
+    IPasswordModel GeneratePasswordModelFromPasswordViewModel(IPasswordViewModel passwordViewModel);
   }
 
   public class PasswordRepository : IPasswordRepository
@@ -19,9 +20,19 @@ namespace API.Database
     private readonly IDriver _driver;
     private readonly ICryptographyUtil _cryptoUtil;
 
-
     #region Database Actions
-    public async Task<List<IPasswordModel>> GetAllForUserId(int id)
+    public IPasswordModel GeneratePasswordModelFromPasswordViewModel(IPasswordViewModel passwordViewModel)
+    {
+      PasswordModel passwordModel = new()
+      {
+        Application_name = passwordViewModel.Application_name,
+        Vault_id = passwordViewModel.Vault_id
+      };
+
+      return passwordModel;
+    }
+
+    public async Task<List<IPasswordModel>> GetAllForUserId(int password_id)
     {
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
       try
@@ -38,7 +49,7 @@ namespace API.Database
                             }) as password";
 
           var parameters = new Dictionary<string, object> {
-            { "id", id }
+            { "id", password_id }
           };
 
           var cursor = await transaction.RunAsync(query, parameters);
@@ -58,7 +69,7 @@ namespace API.Database
       }
     }
 
-    public async Task<IPasswordModel?> GetById(int id)
+    public async Task<IPasswordModel> GetPasswordById(int password_id)
     {
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
       try
@@ -75,12 +86,12 @@ namespace API.Database
                             }) as password";
 
           var parameters = new Dictionary<string, object> {
-            { "id", id }
+            { "id", password_id }
           };
 
           var cursor = await transaction.RunAsync(query, parameters);
 
-          return await cursor.SingleAsync<IPasswordModel?>(record => ToPasswordModel(record["password"].As<List<IDictionary<string, object>>>()));
+          return await cursor.SingleAsync<IPasswordModel>(record => ToPasswordModel(record["password"].As<List<IDictionary<string, object>>>()));
         });
       }
       finally
@@ -89,8 +100,13 @@ namespace API.Database
       }
     }
 
-    public async Task<int?> CreatePassword(IPasswordModel passwordToAdd)
+    public async Task<int> CreatePassword(IPasswordModel passwordToCreate)
     {
+      if (string.IsNullOrWhiteSpace(passwordToCreate.Application_name))
+      {
+        return -1;
+      }
+
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
       try
       {
@@ -99,14 +115,45 @@ namespace API.Database
           var query = "CREATE (password:Password { application_name: $application_name, username: $username, encrypted_password: $encrypted_password}) RETURN password";
 
           var parameters = new Dictionary<string, object> {
-            { "application_name", passwordToAdd.Application_name},
-            { "username", passwordToAdd.Username},
-            { "encrypted_password", passwordToAdd.Encrypted_password},
+            { "application_name", passwordToCreate.Application_name},
+            { "username", passwordToCreate.Username},
+            { "encrypted_password", passwordToCreate.Encrypted_password},
           };
 
           var cursor = await transaction.RunAsync(query, parameters);
 
           return await cursor.SingleAsync(record => record["password"].As<INode>().ElementId.As<int>());
+        });
+      }
+      finally
+      {
+        await session.CloseAsync();
+      }
+    }
+
+    public async Task<bool> CreateRelationshipMember(int vault_id, int password_id)
+    {
+      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
+      try
+      {
+        return await session.ExecuteWriteAsync(async transaction =>
+        {
+          var query = @"MATCH (vault) WHERE id(vault) = $vault_id
+                        MATCH (password) WHERE id(password) = $password_id
+                        MERGE (password)-[:MEMBER{date_created:$date_created, date_updated:$date_updated}]->(vault)
+                        RETURN *";
+
+          var parameters = new Dictionary<string, object> {
+            { "vault_id", vault_id},
+            { "password_id", password_id},
+            { "date_created", DateTime.Now.ToString() },
+            { "date_updated", DateTime.Now.ToString() }
+          };
+
+          var cursor = await transaction.RunAsync(query, parameters);
+          var result = await cursor.FetchAsync();
+
+          return result;
         });
       }
       finally
@@ -128,13 +175,13 @@ namespace API.Database
           };
 
           var cursor = await transaction.RunAsync(query, parameters);
-          var result = await cursor.SingleAsync(record => record["password"] != null);
+          var result = await cursor.FetchAsync();
 
           return result;
         });
         return result;
       }
-      catch (Exception)
+      catch
       {
         return false;
       }
@@ -146,12 +193,17 @@ namespace API.Database
     #endregion
 
     #region Cast
-    private static PasswordModel? ToPasswordModel(IEnumerable<IDictionary<string, object>> datas)
+    private static PasswordModel ToPasswordModel(IEnumerable<IDictionary<string, object>> datas)
     {
       return ToListPasswordModel(datas).FirstOrDefault();
     }
     private static List<PasswordModel> ToListPasswordModel(IEnumerable<IDictionary<string, object>> datas)
     {
+      if (!datas.Any())
+      {
+        throw new Exception("The password doesn't exist.");
+      }
+
       return datas.Select(dictionary => new PasswordModel
       {
         Id = dictionary["id"].As<int>(),

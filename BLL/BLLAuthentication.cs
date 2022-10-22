@@ -22,12 +22,7 @@ namespace API.BLL
 
     public async Task<bool> Login(string username, string password)
     {
-      IUserModel? user = await _userRepository.GetUserByUsername(username);
-      if (user == null)
-      {
-        return false;
-      }
-
+      IUserModel user = await _userRepository.GetUserByUsername(username);
       return _cryptoUtil.VerifyHash(password, user.Salt, user.Hash);
 
     }

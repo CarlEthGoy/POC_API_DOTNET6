@@ -6,12 +6,12 @@ namespace API.Database
 {
   public interface IUserRepository
   {
-    Task<int?> CreateUser(IUserModel userToAdd);
+    Task<int> CreateUser(IUserModel userToCreate);
     Task<bool> DeleteUserById(int id);
-    Task<IUserModel?> GetUserById(int id);
-    Task<IUserModel?> GetUserByUsername(string username);
+    Task<IUserModel> GetUserById(int id);
+    Task<IUserModel> GetUserByUsername(string username);
     Task<bool> IsUsernameAlreadyUsed(string username);
-    IUserModel GenerateUserToCreate(IUserViewModel userViewModel);
+    IUserModel GenerateUserModelFromUserViewModel(IUserViewModel userViewModel);
   }
 
   public class UserRepository : IUserRepository
@@ -23,7 +23,7 @@ namespace API.Database
 
 
     #region Database Actions
-    public async Task<IUserModel?> GetUserById(int id)
+    public async Task<IUserModel> GetUserById(int user_id)
     {
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
       try
@@ -40,12 +40,12 @@ namespace API.Database
                             }) as user";
 
           var parameters = new Dictionary<string, object> {
-            { "id", id }
+            { "id", user_id }
           };
 
           var cursor = await transaction.RunAsync(query, parameters);
 
-          return await cursor.SingleAsync(record => ToUserModel(record["user"].As<List<IDictionary<string, object>>>()));
+          return await cursor.SingleAsync<IUserModel>(record => ToUserModel(record["user"].As<List<IDictionary<string, object>>>()));
         });
       }
       finally
@@ -54,13 +54,8 @@ namespace API.Database
       }
     }
 
-    public async Task<int?> CreateUser(IUserModel userToAdd)
+    public async Task<int> CreateUser(IUserModel userToCreate)
     {
-      if (string.IsNullOrWhiteSpace(userToAdd.Username))
-      {
-        return null;
-      }
-
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
       try
       {
@@ -69,16 +64,20 @@ namespace API.Database
           var query = "CREATE (user:User {username: $username, name: $name, hash: $hash, salt: $salt}) RETURN user";
 
           var parameters = new Dictionary<string, object> {
-            { "username", userToAdd.Username},
-            { "name", userToAdd.Name },
-            { "hash", userToAdd.Hash },
-            { "salt", userToAdd.Salt }
+            { "username", userToCreate.Username},
+            { "name", userToCreate.Name },
+            { "hash", userToCreate.Hash },
+            { "salt", userToCreate.Salt }
           };
 
           var cursor = await transaction.RunAsync(query, parameters);
 
           return await cursor.SingleAsync(record => record["user"].As<INode>().ElementId.As<int>());
         });
+      }
+      catch
+      {
+        return -1;
       }
       finally
       {
@@ -91,7 +90,7 @@ namespace API.Database
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
       try
       {
-        var result = await session.ExecuteWriteAsync(async transaction =>
+        return await session.ExecuteWriteAsync(async transaction =>
         {
           var query = "MATCH (user:User) WHERE id(user) = $id DETACH DELETE user RETURN user";
           var parameters = new Dictionary<string, object> {
@@ -103,9 +102,8 @@ namespace API.Database
 
           return result;
         });
-        return result;
       }
-      catch (Exception)
+      catch
       {
         return false;
       }
@@ -115,7 +113,7 @@ namespace API.Database
       }
     }
 
-    public async Task<IUserModel?> GetUserByUsername(string username)
+    public async Task<IUserModel> GetUserByUsername(string username)
     {
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
       try
@@ -149,12 +147,12 @@ namespace API.Database
 
     public async Task<bool> IsUsernameAlreadyUsed(string username)
     {
-      var user = await GetUserByUsername(username);
-      var isAlreadyUsed = user != null;
+      IUserModel user = await GetUserByUsername(username);
+      bool isAlreadyUsed = user != null;
       return isAlreadyUsed;
     }
 
-    public IUserModel GenerateUserToCreate(IUserViewModel userViewModel)
+    public IUserModel GenerateUserModelFromUserViewModel(IUserViewModel userViewModel)
     {
       byte[] salt = _cryptoUtil.GenerateSalt();
       byte[] hash = _cryptoUtil.HashPassword(userViewModel.Password, salt);
@@ -172,12 +170,18 @@ namespace API.Database
     #endregion
 
     #region Cast
-    private static UserModel? ToUserModel(IEnumerable<IDictionary<string, object>> datas)
+    private static UserModel ToUserModel(IEnumerable<IDictionary<string, object>> datas)
     {
-      return ToListUserModel(datas).FirstOrDefault();
+      return ToListUserModel(datas).First();
     }
+
     private static List<UserModel> ToListUserModel(IEnumerable<IDictionary<string, object>> datas)
     {
+      if (!datas.Any())
+      {
+        throw new Exception("The user doesn't exist.");
+      }
+
       return datas.Select(dictionary => new UserModel
       {
         Id = dictionary["id"].As<int>(),

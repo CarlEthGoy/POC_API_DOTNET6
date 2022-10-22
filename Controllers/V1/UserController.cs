@@ -1,5 +1,4 @@
 ﻿using API.BLL;
-using API.Database;
 using API.Models.V1;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,28 +13,25 @@ namespace API.Controllers.V1
   public class UserController : ControllerBase
   {
     private readonly IBLLUser _bllUser;
-    private readonly IBLLAuthentication _bllAuthentication;
 
-    public UserController(IUserRepository repository, IBLLUser bllUser, IBLLAuthentication bllAuthentication)
+    public UserController(IBLLUser bllUser)
     {
       _bllUser = bllUser;
-      _bllAuthentication = bllAuthentication;
     }
 
     [MapToApiVersion("1.0")]
     [HttpGet("{user_id}")]
-    public async Task<UserModel?> GetUserById(int user_id)
+    public async Task<UserModel> GetUserById(int user_id)
     {
-      UserModel? createdUserId = (UserModel?)await _bllUser.GetUserById(user_id);
+      UserModel createdUserId = (UserModel)await _bllUser.GetUserById(user_id);
       return createdUserId;
     }
 
     [MapToApiVersion("1.0")]
     [HttpPost]
-    public async Task<int?> CreateUser(UserViewModel user)
+    public async Task<int> CreateUser(UserViewModel userToCreate)
     {
-      int? createdUserId = await _bllUser.CreateUser(user);
-
+      int createdUserId = await _bllUser.CreateUser(userToCreate);
       return createdUserId;
     }
 

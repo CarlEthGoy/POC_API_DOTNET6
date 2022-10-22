@@ -5,8 +5,8 @@ namespace API.BLL
 {
   public interface IBLLVault
   {
-    Task<IVaultModel?> GetVaultById(int id);
-    Task<int?> CreateVault(IVaultViewModel vaultViewModel);
+    Task<IVaultModel> GetVaultById(int id);
+    Task<int> CreateVault(IVaultViewModel vaultViewModel);
     Task<bool> DeleteVaultById(int id);
   }
 
@@ -21,37 +21,41 @@ namespace API.BLL
       _userRepository = userRepository;
     }
 
-    public async Task<IVaultModel?> GetVaultById(int id)
+    public async Task<IVaultModel> GetVaultById(int vault_id)
     {
-      var vault = await _vaultRepository.GetVaultById(id);
+      var vault = await _vaultRepository.GetVaultById(vault_id);
       return vault;
     }
 
-    public async Task<int?> CreateVault(IVaultViewModel vaultViewModel)
+    public async Task<int> CreateVault(IVaultViewModel vaultViewModelToCreate)
     {
-      VaultModel vaultModel = new()
+      if (string.IsNullOrWhiteSpace(vaultViewModelToCreate.Name))
       {
-        Name = vaultViewModel.Name,
-        User_id = vaultViewModel.User_id
-      };
-
-      // Valider que le username existe!
-      if (await _userRepository.GetUserById(vaultViewModel.User_id) == null)
-      {
-        throw new Exception($"The user with id : {vaultViewModel.User_id} doesn't exist!");
+        throw new Exception("Name is required.");
       }
 
-      int? createdVaultId = await _vaultRepository.CreateVault(vaultModel);
-      vaultModel.Id = createdVaultId.Value;
+      if (await _userRepository.GetUserById(vaultViewModelToCreate.User_id) == null)
+      {
+        throw new Exception($"The user with id : {vaultViewModelToCreate.User_id} doesn't exist!");
+      }
 
-      bool createdRelationShip = await _vaultRepository.CreateRelationshipOwner(vaultModel);
+      IVaultModel vaultModelToCreate = _vaultRepository.GenerateVaultModelFromVaultViewModel(vaultViewModelToCreate);
+
+      int createdVaultId = await _vaultRepository.CreateVault(vaultModelToCreate);
+      vaultModelToCreate.Id = createdVaultId;
+
+      bool createdRelationShip = await _vaultRepository.CreateRelationshipOwner(vaultModelToCreate.User_id, vaultModelToCreate.Id);
+      if (!createdRelationShip)
+      {
+        throw new Exception($"Couln't create the relationship between vault:{createdVaultId} and user:{vaultViewModelToCreate.User_id} !");
+      }
 
       return createdVaultId;
     }
 
-    public async Task<bool> DeleteVaultById(int id)
+    public async Task<bool> DeleteVaultById(int vault_id)
     {
-      return await _vaultRepository.DeleteVaultById(id);
+      return await _vaultRepository.DeleteVaultById(vault_id);
     }
   }
 }

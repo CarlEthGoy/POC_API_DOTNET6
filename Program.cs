@@ -70,10 +70,11 @@ builder.Services.AddVersionedApiExplorer(options =>
 builder.Services.AddSingleton(GraphDatabase.Driver(builder.Configuration["Neo4JSettings:Connection"], AuthTokens.Basic(builder.Configuration["Neo4JSettings:User"], builder.Configuration["Neo4JSettings:Password"])));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IVaultRepository, VaultRepository>();
-builder.Services.AddScoped<ILogRepository, LogRepository>();
+builder.Services.AddScoped<IPasswordRepository, PasswordRepository>();
 builder.Services.AddScoped<ICryptographyUtil, CryptographyUtil>();
 builder.Services.AddScoped<IBLLUser, BLLUser>();
 builder.Services.AddScoped<IBLLVault, BLLVault>();
+builder.Services.AddScoped<IBLLPassword, BLLPassword>();
 builder.Services.AddScoped<IBLLAuthentication, BLLAuthentication>();
 #endregion
 

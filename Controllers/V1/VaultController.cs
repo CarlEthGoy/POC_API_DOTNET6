@@ -1,5 +1,4 @@
 ﻿using API.BLL;
-using API.Database;
 using API.Models.V1;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,24 +14,24 @@ namespace API.Controllers.V1
   {
     private readonly IBLLVault _bllVault;
 
-    public VaultController(IVaultRepository repository, IBLLVault bllVault)
+    public VaultController(IBLLVault bllVault)
     {
       _bllVault = bllVault;
     }
 
     [MapToApiVersion("1.0")]
     [HttpGet("{vault_id}")]
-    public async Task<VaultModel?> GetVaultById(int vault_id)
+    public async Task<VaultModel> GetVaultById(int vault_id)
     {
-      VaultModel? createdVault = (VaultModel?)await _bllVault.GetVaultById(vault_id);
+      VaultModel createdVault = (VaultModel)await _bllVault.GetVaultById(vault_id);
       return createdVault;
     }
 
     [MapToApiVersion("1.0")]
-    [HttpPost("")]
-    public async Task<int?> CreateVault(VaultViewModel vault)
+    [HttpPost]
+    public async Task<int> CreateVault(VaultViewModel vaultToCreate)
     {
-      int? createdVaultId = await _bllVault.CreateVault(vault);
+      int createdVaultId = await _bllVault.CreateVault(vaultToCreate);
       return createdVaultId;
     }
 

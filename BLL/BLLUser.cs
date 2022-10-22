@@ -7,10 +7,10 @@ namespace API.BLL
 {
   public interface IBLLUser
   {
-    Task<int?> CreateUser(IUserViewModel userViewModel);
+    Task<int> CreateUser(IUserViewModel userViewModel);
     Task<bool> DeleteUserById(int id);
-    Task<IUserModel?> GetUserById(int id);
-    Task<IUserModel?> GetByUsername(string username);
+    Task<IUserModel> GetUserById(int id);
+    Task<IUserModel> GetByUsername(string username);
   }
 
   public class BLLUser : IBLLUser
@@ -22,30 +22,36 @@ namespace API.BLL
       _userRepository = repository;
     }
 
-    public async Task<IUserModel?> GetUserById(int id)
+    public async Task<IUserModel> GetUserById(int user_id)
     {
-      var user = await _userRepository.GetUserById(id);
+      var user = await _userRepository.GetUserById(user_id);
       return user;
     }
 
-    public async Task<int?> CreateUser(IUserViewModel userViewModel)
+    public async Task<int> CreateUser(IUserViewModel userToCreate)
     {
-      bool isPasswordValid = CryptographyUtil.Instance.IsPasswordValid(userViewModel.Password, EnumPasswordComplexity.Medium);
+      if (string.IsNullOrWhiteSpace(userToCreate.Username))
+      {
+        throw new Exception("Username is required.");
+      }
+
+      bool isPasswordValid = CryptographyUtil.Instance.IsPasswordValid(userToCreate.Password, EnumPasswordComplexity.Medium);
       if (!isPasswordValid)
       {
         throw new Exception("Password is invalid.");
       }
 
-      IUserModel userModel = _userRepository.GenerateUserToCreate(userViewModel);
-
       // Valider que le username n'existe pas!
-      if (await _userRepository.IsUsernameAlreadyUsed(userViewModel.Username))
+      if (await _userRepository.IsUsernameAlreadyUsed(userToCreate.Username))
       {
-        throw new Exception($"This username is already in use : {userViewModel.Username}");
+        throw new Exception($"Username is already in use.");
       }
 
-      int? createdUserId = await _userRepository.CreateUser(userModel);
+      IUserModel userModel = _userRepository.GenerateUserModelFromUserViewModel(userToCreate);
+
+      int createdUserId = await _userRepository.CreateUser(userModel);
       return createdUserId;
+
     }
 
     public async Task<bool> DeleteUserById(int id)
@@ -53,11 +59,10 @@ namespace API.BLL
       return await _userRepository.DeleteUserById(id);
     }
 
-    public async Task<IUserModel?> GetByUsername(string username)
+    public async Task<IUserModel> GetByUsername(string username)
     {
       var user = await _userRepository.GetUserByUsername(username);
       return user;
     }
-
   }
 }

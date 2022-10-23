@@ -20,14 +20,6 @@ namespace API.Controllers.V1
     }
 
     [MapToApiVersion("1.0")]
-    [HttpGet("{user_id}")]
-    public async Task<UserModel> GetUserById(int user_id)
-    {
-      UserModel createdUserId = (UserModel)await _bllUser.GetUserById(user_id);
-      return createdUserId;
-    }
-
-    [MapToApiVersion("1.0")]
     [HttpPost]
     public async Task<int> CreateUser(UserViewModel userToCreate)
     {
@@ -41,6 +33,14 @@ namespace API.Controllers.V1
     {
       bool isDeleted = await _bllUser.DeleteUserById(user_id);
       return isDeleted;
+    }
+
+    [MapToApiVersion("1.0")]
+    [HttpGet("{user_id}")]
+    public async Task<UserModel> GetUserById(int user_id)
+    {
+      UserModel createdUser = (UserModel)await _bllUser.GetUserById(user_id);
+      return createdUser;
     }
   }
 }

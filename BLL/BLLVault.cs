@@ -5,26 +5,19 @@ namespace API.BLL
 {
   public interface IBLLVault
   {
-    Task<IVaultModel> GetVaultById(int id);
     Task<int> CreateVault(IVaultViewModel vaultViewModel);
     Task<bool> DeleteVaultById(int id);
+    Task<IVaultModel> GetVaultById(int id);
   }
 
   public class BLLVault : IBLLVault
   {
-    private readonly IVaultRepository _vaultRepository;
     private readonly IUserRepository _userRepository;
-
+    private readonly IVaultRepository _vaultRepository;
     public BLLVault(IVaultRepository vaultRepository, IUserRepository userRepository)
     {
       _vaultRepository = vaultRepository;
       _userRepository = userRepository;
-    }
-
-    public async Task<IVaultModel> GetVaultById(int vault_id)
-    {
-      var vault = await _vaultRepository.GetVaultById(vault_id);
-      return vault;
     }
 
     public async Task<int> CreateVault(IVaultViewModel vaultViewModelToCreate)
@@ -56,6 +49,12 @@ namespace API.BLL
     public async Task<bool> DeleteVaultById(int vault_id)
     {
       return await _vaultRepository.DeleteVaultById(vault_id);
+    }
+
+    public async Task<IVaultModel> GetVaultById(int vault_id)
+    {
+      var vault = await _vaultRepository.GetVaultById(vault_id);
+      return vault;
     }
   }
 }

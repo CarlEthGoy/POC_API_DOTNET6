@@ -11,9 +11,8 @@ namespace API.BLL
 
   public class BLLAuthentication : IBLLAuthentication
   {
-    private readonly IUserRepository _userRepository;
     private readonly ICryptographyUtil _cryptoUtil;
-
+    private readonly IUserRepository _userRepository;
     public BLLAuthentication(IUserRepository repository, ICryptographyUtil cryptoUtil)
     {
       _userRepository = repository;
@@ -23,7 +22,8 @@ namespace API.BLL
     public async Task<bool> Login(string username, string password)
     {
       IUserModel user = await _userRepository.GetUserByUsername(username);
-      return _cryptoUtil.VerifyHash(password, user.Salt, user.Hash);
+      bool isVerified = _cryptoUtil.VerifyHash(password, user.Salt, user.Hash);
+      return isVerified;
 
     }
   }

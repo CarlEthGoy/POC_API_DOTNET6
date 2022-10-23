@@ -14,18 +14,12 @@ namespace API.Controllers.V1
   public class PasswordController : ControllerBase
   {
     private readonly IBLLPassword _bllPassword;
+    private readonly IVaultRepository _vaultRepository;
 
-    public PasswordController(IVaultRepository repository, IBLLPassword bllPassword)
+    public PasswordController(IVaultRepository vaultRepository, IBLLPassword bllPassword)
     {
       _bllPassword = bllPassword;
-    }
-
-    [MapToApiVersion("1.0")]
-    [HttpGet("{password_id}")]
-    public async Task<VaultModel> GetPasswordById(int password_id)
-    {
-      VaultModel createdVault = (VaultModel)await _bllPassword.GetPasswordById(password_id);
-      return createdVault;
+      _vaultRepository = vaultRepository;
     }
 
     [MapToApiVersion("1.0")]
@@ -42,6 +36,14 @@ namespace API.Controllers.V1
     {
       bool isDeleted = await _bllPassword.DeletePasswordById(password_id);
       return isDeleted;
+    }
+
+    [MapToApiVersion("1.0")]
+    [HttpGet("{password_id}")]
+    public async Task<PasswordModel> GetPasswordById(int password_id)
+    {
+      PasswordModel createdVault = (PasswordModel)await _bllPassword.GetPasswordById(password_id);
+      return createdVault;
     }
   }
 }

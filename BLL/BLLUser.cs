@@ -9,8 +9,8 @@ namespace API.BLL
   {
     Task<int> CreateUser(IUserViewModel userViewModel);
     Task<bool> DeleteUserById(int id);
-    Task<IUserModel> GetUserById(int id);
     Task<IUserModel> GetByUsername(string username);
+    Task<IUserModel> GetUserById(int id);
   }
 
   public class BLLUser : IBLLUser
@@ -20,12 +20,6 @@ namespace API.BLL
     public BLLUser(IUserRepository repository)
     {
       _userRepository = repository;
-    }
-
-    public async Task<IUserModel> GetUserById(int user_id)
-    {
-      var user = await _userRepository.GetUserById(user_id);
-      return user;
     }
 
     public async Task<int> CreateUser(IUserViewModel userToCreate)
@@ -41,7 +35,6 @@ namespace API.BLL
         throw new Exception("Password is invalid.");
       }
 
-      // Valider que le username n'existe pas!
       if (await _userRepository.IsUsernameAlreadyUsed(userToCreate.Username))
       {
         throw new Exception($"Username is already in use.");
@@ -62,6 +55,12 @@ namespace API.BLL
     public async Task<IUserModel> GetByUsername(string username)
     {
       var user = await _userRepository.GetUserByUsername(username);
+      return user;
+    }
+
+    public async Task<IUserModel> GetUserById(int user_id)
+    {
+      var user = await _userRepository.GetUserById(user_id);
       return user;
     }
   }

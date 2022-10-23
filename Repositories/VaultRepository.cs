@@ -5,22 +5,116 @@ namespace API.Database
 {
   public interface IVaultRepository
   {
+    Task<bool> CreateRelationshipOwner(int user_id, int vault_id);
     Task<int> CreateVault(IVaultModel vaultToAdd);
     Task<bool> DeleteVaultById(int vaultId);
-    Task<IVaultModel> GetVaultById(int vault_id);
-    Task<List<IVaultModel>> GetAllVaultForUserId(int user_id);
-    Task<bool> CreateRelationshipOwner(int user_id, int vault_id);
     IVaultModel GenerateVaultModelFromVaultViewModel(IVaultViewModel vaultViewModel);
+    Task<List<IVaultModel>> GetAllVaultForUserId(int user_id);
+    Task<IVaultModel> GetVaultById(int vault_id);
   }
 
   public class VaultRepository : IVaultRepository
   {
     private readonly IConfiguration _configuration;
-    private bool _disposed = false;
     private readonly IDriver _driver;
-
-
+    private bool _disposed = false;
     #region Database Actions
+    public async Task<bool> CreateRelationshipOwner(int user_id, int vault_id)
+    {
+      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
+      try
+      {
+        return await session.ExecuteWriteAsync(async transaction =>
+        {
+          var query = @"MATCH (user) WHERE id(user) = $user_id
+                        MATCH (vault) WHERE id(vault) = $vault_id
+                        MERGE (user)-[:OWNER{date_created:$date_created, date_updated:$date_updated}]->(vault)
+                        RETURN *";
+
+          var parameters = new Dictionary<string, object> {
+            { "user_id", user_id},
+            { "vault_id", vault_id},
+            { "date_created", DateTime.Now.ToString() },
+            { "date_updated", DateTime.Now.ToString() }
+          };
+
+          var cursor = await transaction.RunAsync(query, parameters);
+          var result = await cursor.FetchAsync();
+
+          return result;
+        });
+      }
+      catch
+      {
+        return false;
+      }
+      finally
+      {
+        await session.CloseAsync();
+      }
+    }
+
+    public async Task<int> CreateVault(IVaultModel vaultToAdd)
+    {
+      if (string.IsNullOrWhiteSpace(vaultToAdd.Name))
+      {
+        return -1;
+      }
+
+      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
+      try
+      {
+        return await session.ExecuteWriteAsync(async transaction =>
+        {
+          var query = "CREATE (vault:Vault { name: $name }) RETURN vault";
+
+          var parameters = new Dictionary<string, object> {
+            { "name", vaultToAdd.Name},
+          };
+
+          var cursor = await transaction.RunAsync(query, parameters);
+
+          return await cursor.SingleAsync(record => record["vault"].As<INode>().ElementId.As<int>());
+        });
+      }
+      catch
+      {
+        return -1;
+      }
+      finally
+      {
+        await session.CloseAsync();
+      }
+    }
+
+    public async Task<bool> DeleteVaultById(int vault_id)
+    {
+      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
+      try
+      {
+        return await session.ExecuteWriteAsync(async transaction =>
+        {
+          var query = "MATCH (vault:Vault) WHERE id(vault) = $id DETACH DELETE vault RETURN vault";
+          var parameters = new Dictionary<string, object> {
+            { "id", vault_id},
+          };
+
+          var cursor = await transaction.RunAsync(query, parameters);
+          var result = await cursor.FetchAsync();
+
+          return result;
+        });
+      }
+      catch
+      {
+        return false;
+      }
+      finally
+      {
+        await session.CloseAsync();
+      }
+    }
+
     public IVaultModel GenerateVaultModelFromVaultViewModel(IVaultViewModel vaultViewModel)
     {
       VaultModel vaultModel = new()
@@ -93,103 +187,9 @@ namespace API.Database
         await session.CloseAsync();
       }
     }
-
-    public async Task<int> CreateVault(IVaultModel vaultToAdd)
-    {
-      if (string.IsNullOrWhiteSpace(vaultToAdd.Name))
-      {
-        return -1;
-      }
-
-      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
-      try
-      {
-        return await session.ExecuteWriteAsync(async transaction =>
-        {
-          var query = "CREATE (vault:Vault { name: $name }) RETURN vault";
-
-          var parameters = new Dictionary<string, object> {
-            { "name", vaultToAdd.Name},
-          };
-
-          var cursor = await transaction.RunAsync(query, parameters);
-
-          return await cursor.SingleAsync(record => record["vault"].As<INode>().ElementId.As<int>());
-        });
-      }
-      finally
-      {
-        await session.CloseAsync();
-      }
-    }
-
-    public async Task<bool> CreateRelationshipOwner(int user_id, int vault_id)
-    {
-      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
-      try
-      {
-        return await session.ExecuteWriteAsync(async transaction =>
-        {
-          var query = @"MATCH (user) WHERE id(user) = $user_id
-                        MATCH (vault) WHERE id(vault) = $vault_id
-                        MERGE (user)-[:OWNER{date_created:$date_created, date_updated:$date_updated}]->(vault)
-                        RETURN *";
-
-          var parameters = new Dictionary<string, object> {
-            { "user_id", user_id},
-            { "vault_id", vault_id},
-            { "date_created", DateTime.Now.ToString() },
-            { "date_updated", DateTime.Now.ToString() }
-          };
-
-          var cursor = await transaction.RunAsync(query, parameters);
-          var result = await cursor.FetchAsync();
-
-          return result;
-        });
-      }
-      finally
-      {
-        await session.CloseAsync();
-      }
-    }
-
-    public async Task<bool> DeleteVaultById(int vault_id)
-    {
-      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
-      try
-      {
-        var result = await session.ExecuteWriteAsync(async transaction =>
-        {
-          var query = "MATCH (vault:Vault) WHERE id(vault) = $id DETACH DELETE vault RETURN vault";
-          var parameters = new Dictionary<string, object> {
-            { "id", vault_id},
-          };
-
-          var cursor = await transaction.RunAsync(query, parameters);
-          var result = await cursor.FetchAsync();
-
-          return result;
-        });
-        return result;
-      }
-      catch
-      {
-        return false;
-      }
-      finally
-      {
-        await session.CloseAsync();
-      }
-    }
     #endregion
 
     #region Cast
-    private static VaultModel ToVaultModel(IEnumerable<IDictionary<string, object>> datas)
-    {
-      return ToListVaultModel(datas).First();
-    }
-
     private static List<VaultModel> ToListVaultModel(IEnumerable<IDictionary<string, object>> datas)
     {
       if (!datas.Any())
@@ -202,6 +202,11 @@ namespace API.Database
         Id = dictionary["id"].As<int>(),
         Name = dictionary["name"].As<string>(),
       }).ToList();
+    }
+
+    private static VaultModel ToVaultModel(IEnumerable<IDictionary<string, object>> datas)
+    {
+      return ToListVaultModel(datas).First();
     }
     #endregion
 

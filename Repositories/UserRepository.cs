@@ -8,52 +8,19 @@ namespace API.Database
   {
     Task<int> CreateUser(IUserModel userToCreate);
     Task<bool> DeleteUserById(int id);
+    IUserModel GenerateUserModelFromUserViewModel(IUserViewModel userViewModel);
     Task<IUserModel> GetUserById(int id);
     Task<IUserModel> GetUserByUsername(string username);
     Task<bool> IsUsernameAlreadyUsed(string username);
-    IUserModel GenerateUserModelFromUserViewModel(IUserViewModel userViewModel);
   }
 
   public class UserRepository : IUserRepository
   {
     private readonly IConfiguration _configuration;
-    private bool _disposed = false;
-    private readonly IDriver _driver;
     private readonly ICryptographyUtil _cryptoUtil;
-
-
+    private readonly IDriver _driver;
+    private bool _disposed = false;
     #region Database Actions
-    public async Task<IUserModel> GetUserById(int user_id)
-    {
-      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
-      try
-      {
-        return await session.ExecuteReadAsync(async transaction =>
-        {
-          var query = @"MATCH (user:User) 
-                     WHERE id(user) = $id
-                     RETURN collect({name: user.name,
-                              id: ID(user),
-                              username: user.username,
-                              hash: user.hash,
-                              salt: user.salt
-                            }) as user";
-
-          var parameters = new Dictionary<string, object> {
-            { "id", user_id }
-          };
-
-          var cursor = await transaction.RunAsync(query, parameters);
-
-          return await cursor.SingleAsync<IUserModel>(record => ToUserModel(record["user"].As<List<IDictionary<string, object>>>()));
-        });
-      }
-      finally
-      {
-        await session.CloseAsync();
-      }
-    }
-
     public async Task<int> CreateUser(IUserModel userToCreate)
     {
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
@@ -113,6 +80,52 @@ namespace API.Database
       }
     }
 
+    public IUserModel GenerateUserModelFromUserViewModel(IUserViewModel userViewModel)
+    {
+      byte[] salt = _cryptoUtil.GenerateSalt();
+      byte[] hash = _cryptoUtil.HashPassword(userViewModel.Password, salt);
+
+      UserModel userModel = new()
+      {
+        Username = userViewModel.Username,
+        Hash = hash,
+        Name = userViewModel.Name,
+        Salt = salt,
+      };
+
+      return userModel;
+    }
+
+    public async Task<IUserModel> GetUserById(int user_id)
+    {
+      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
+      try
+      {
+        return await session.ExecuteReadAsync(async transaction =>
+        {
+          var query = @"MATCH (user:User) 
+                     WHERE id(user) = $id
+                     RETURN collect({name: user.name,
+                              id: ID(user),
+                              username: user.username,
+                              hash: user.hash,
+                              salt: user.salt
+                            }) as user";
+
+          var parameters = new Dictionary<string, object> {
+            { "id", user_id }
+          };
+
+          var cursor = await transaction.RunAsync(query, parameters);
+
+          return await cursor.SingleAsync<IUserModel>(record => ToUserModel(record["user"].As<List<IDictionary<string, object>>>()));
+        });
+      }
+      finally
+      {
+        await session.CloseAsync();
+      }
+    }
     public async Task<IUserModel> GetUserByUsername(string username)
     {
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
@@ -151,30 +164,9 @@ namespace API.Database
       bool isAlreadyUsed = user != null;
       return isAlreadyUsed;
     }
-
-    public IUserModel GenerateUserModelFromUserViewModel(IUserViewModel userViewModel)
-    {
-      byte[] salt = _cryptoUtil.GenerateSalt();
-      byte[] hash = _cryptoUtil.HashPassword(userViewModel.Password, salt);
-
-      UserModel userModel = new()
-      {
-        Username = userViewModel.Username,
-        Hash = hash,
-        Name = userViewModel.Name,
-        Salt = salt,
-      };
-
-      return userModel;
-    }
     #endregion
 
     #region Cast
-    private static UserModel ToUserModel(IEnumerable<IDictionary<string, object>> datas)
-    {
-      return ToListUserModel(datas).First();
-    }
-
     private static List<UserModel> ToListUserModel(IEnumerable<IDictionary<string, object>> datas)
     {
       if (!datas.Any())
@@ -190,6 +182,11 @@ namespace API.Database
         Hash = dictionary["hash"].As<Byte[]>(),
         Salt = dictionary["salt"].As<Byte[]>()
       }).ToList();
+    }
+
+    private static UserModel ToUserModel(IEnumerable<IDictionary<string, object>> datas)
+    {
+      return ToListUserModel(datas).First();
     }
     #endregion
 

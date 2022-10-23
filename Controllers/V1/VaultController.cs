@@ -20,14 +20,6 @@ namespace API.Controllers.V1
     }
 
     [MapToApiVersion("1.0")]
-    [HttpGet("{vault_id}")]
-    public async Task<VaultModel> GetVaultById(int vault_id)
-    {
-      VaultModel createdVault = (VaultModel)await _bllVault.GetVaultById(vault_id);
-      return createdVault;
-    }
-
-    [MapToApiVersion("1.0")]
     [HttpPost]
     public async Task<int> CreateVault(VaultViewModel vaultToCreate)
     {
@@ -41,6 +33,14 @@ namespace API.Controllers.V1
     {
       bool isDeleted = await _bllVault.DeleteVaultById(vault_id);
       return isDeleted;
+    }
+
+    [MapToApiVersion("1.0")]
+    [HttpGet("{vault_id}")]
+    public async Task<VaultModel> GetVaultById(int vault_id)
+    {
+      VaultModel createdVault = (VaultModel)await _bllVault.GetVaultById(vault_id);
+      return createdVault;
     }
   }
 }

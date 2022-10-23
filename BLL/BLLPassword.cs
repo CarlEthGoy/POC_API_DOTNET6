@@ -5,28 +5,21 @@ namespace API.BLL
 {
   public interface IBLLPassword
   {
-    Task<IPasswordModel> GetPasswordById(int password_id);
     Task<int> CreatePassword(IPasswordViewModel passwordToCreate);
     Task<bool> DeletePasswordById(int password_id);
+    Task<IPasswordModel> GetPasswordById(int password_id);
   }
 
   public class BLLPassword : IBLLPassword
   {
     private readonly IPasswordRepository _passwordRepository;
-    private readonly IVaultRepository _vaultRepository;
     private readonly IUserRepository _userRepository;
-
+    private readonly IVaultRepository _vaultRepository;
     public BLLPassword(IPasswordRepository passwordRepository, IVaultRepository vaultRepository, IUserRepository userRepository)
     {
       _passwordRepository = passwordRepository;
       _vaultRepository = vaultRepository;
       _userRepository = userRepository;
-    }
-
-    public async Task<IPasswordModel> GetPasswordById(int password_id)
-    {
-      var password = await _passwordRepository.GetPasswordById(password_id);
-      return password;
     }
 
     public async Task<int> CreatePassword(IPasswordViewModel passwordViewModelToCreate)
@@ -36,7 +29,6 @@ namespace API.BLL
         throw new Exception("Application_name is required.");
       }
 
-      // Valider que le vault existe!
       if (await _vaultRepository.GetVaultById(passwordViewModelToCreate.Vault_id) == null)
       {
         throw new Exception($"The vault with id:{passwordViewModelToCreate.Vault_id} doesn't exist!");
@@ -57,6 +49,12 @@ namespace API.BLL
     public async Task<bool> DeletePasswordById(int password_id)
     {
       return await _passwordRepository.DeletePasswordById(password_id);
+    }
+
+    public async Task<IPasswordModel> GetPasswordById(int password_id)
+    {
+      IPasswordModel password = await _passwordRepository.GetPasswordById(password_id);
+      return password;
     }
   }
 }

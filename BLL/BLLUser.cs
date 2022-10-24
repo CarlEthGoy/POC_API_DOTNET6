@@ -11,6 +11,7 @@ namespace API.BLL
     Task<bool> DeleteUserById(int id);
     Task<IUserModel> GetByUsername(string username);
     Task<IUserModel> GetUserById(int id);
+    Task<bool> PatchUser(int id, UserViewModel userToUpdate);
   }
 
   public class BLLUser : IBLLUser
@@ -62,6 +63,32 @@ namespace API.BLL
     {
       var user = await _userRepository.GetUserById(user_id);
       return user;
+    }
+
+    public async Task<bool> PatchUser(int id, UserViewModel userToUpdate)
+    {
+      IUserModel userInDatabase = await GetUserById(id);
+      if (userInDatabase == null)
+      {
+        return false;
+      }
+
+      if (userInDatabase.Name != userToUpdate.Name)
+      {
+        userInDatabase.Name = userToUpdate.Name;
+      }
+
+      //TODO AJOUTER SECURITE JUSTE LE COMPTE MAITRE PEUT CHANGER LE PWD...
+      if (!string.IsNullOrWhiteSpace(userToUpdate.Password))
+      {
+        userInDatabase.Salt = CryptographyUtil.Instance.GenerateSalt();
+        userInDatabase.Hash = CryptographyUtil.Instance.HashPassword(userToUpdate.Password, userInDatabase.Salt);
+      }
+
+      userInDatabase.Id = id;
+
+      bool isUserUpdated = await _userRepository.UpdateUser(userInDatabase);
+      return isUserUpdated;
     }
   }
 }

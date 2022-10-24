@@ -24,7 +24,7 @@ namespace API.Controllers.V1
 
     [MapToApiVersion("1.0")]
     [HttpPost]
-    public async Task<int> CreatePassword(PasswordViewModel passwordToCreate)
+    public async Task<int> CreatePassword([FromBody] PasswordViewModel passwordToCreate)
     {
       int createdPasswordId = await _bllPassword.CreatePassword(passwordToCreate);
       return createdPasswordId;

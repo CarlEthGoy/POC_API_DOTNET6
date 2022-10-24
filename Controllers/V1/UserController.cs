@@ -21,7 +21,7 @@ namespace API.Controllers.V1
 
     [MapToApiVersion("1.0")]
     [HttpPost]
-    public async Task<int> CreateUser(UserViewModel userToCreate)
+    public async Task<int> CreateUser([FromBody] UserViewModel userToCreate)
     {
       int createdUserId = await _bllUser.CreateUser(userToCreate);
       return createdUserId;
@@ -41,6 +41,14 @@ namespace API.Controllers.V1
     {
       UserModel createdUser = (UserModel)await _bllUser.GetUserById(user_id);
       return createdUser;
+    }
+
+    [MapToApiVersion("1.0")]
+    [HttpPatch("{user_id}")]
+    public async Task<bool> PatchUser(int user_id, [FromBody] UserViewModel userToPatch)
+    {
+      bool isUserCreated = await _bllUser.PatchUser(user_id, userToPatch);
+      return isUserCreated;
     }
   }
 }

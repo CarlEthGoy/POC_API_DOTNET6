@@ -21,7 +21,7 @@ namespace API.Controllers.V1
 
     [MapToApiVersion("1.0")]
     [HttpPost]
-    public async Task<int> CreateVault(VaultViewModel vaultToCreate)
+    public async Task<int> CreateVault([FromBody] VaultViewModel vaultToCreate)
     {
       int createdVaultId = await _bllVault.CreateVault(vaultToCreate);
       return createdVaultId;

@@ -9,6 +9,7 @@
     byte[] Salt { get; set; }
 
   }
+
   public interface IUserViewModel
   {
     string Username { get; set; }

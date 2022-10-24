@@ -12,6 +12,7 @@ namespace API.Database
     Task<IUserModel> GetUserById(int id);
     Task<IUserModel> GetUserByUsername(string username);
     Task<bool> IsUsernameAlreadyUsed(string username);
+    Task<bool> UpdateUser(IUserModel userToUpdate);
   }
 
   public class UserRepository : IUserRepository
@@ -21,6 +22,7 @@ namespace API.Database
     private readonly IDriver _driver;
     private bool _disposed = false;
     #region Database Actions
+
     public async Task<int> CreateUser(IUserModel userToCreate)
     {
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
@@ -126,6 +128,7 @@ namespace API.Database
         await session.CloseAsync();
       }
     }
+
     public async Task<IUserModel> GetUserByUsername(string username)
     {
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
@@ -163,6 +166,41 @@ namespace API.Database
       IUserModel user = await GetUserByUsername(username);
       bool isAlreadyUsed = user != null;
       return isAlreadyUsed;
+    }
+
+    public async Task<bool> UpdateUser(IUserModel userToUpdate)
+    {
+      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
+      try
+      {
+        return await session.ExecuteWriteAsync(async transaction =>
+        {
+          var query = @"MATCH (u:User) 
+                        WHERE id(u) = $user_id 
+                        SET u.name = $name, u.hash = $hash, u.salt = $salt 
+                        RETURN u";
+
+          var parameters = new Dictionary<string, object> {
+            { "user_id", userToUpdate.Id },
+            { "name", userToUpdate.Name },
+            { "hash", userToUpdate.Hash },
+            { "salt", userToUpdate.Salt }
+          };
+
+          var cursor = await transaction.RunAsync(query, parameters);
+          var result = await cursor.FetchAsync();
+
+          return result;
+        });
+      }
+      catch
+      {
+        return false;
+      }
+      finally
+      {
+        await session.CloseAsync();
+      }
     }
     #endregion
 

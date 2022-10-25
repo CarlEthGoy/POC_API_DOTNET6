@@ -2,9 +2,10 @@
 # This .gitignore file was automatically created by Microsoft(R) Visual Studio.
 ################################################################################
 
-/obj
-/appsettings.json
-/.vs
 /.config
-/bin/Debug/net6.0
-/bin/Release/net6.0
+/.vs/API
+/API/appsettings.Development.json
+/Tests/bin/Debug/net6.0
+/Tests/obj/Debug/net6.0
+/Tests/obj
+*.json

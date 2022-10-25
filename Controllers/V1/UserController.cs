@@ -1,59 +1,54 @@
 ﻿using API.BLL;
-using API.Cryptography;
-using API.Database;
 using API.Models.V1;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Identity.Web.Resource;
 
 namespace API.Controllers.V1
 {
-  [RequiredScope(RequiredScopesConfigurationKey = "AzureAd:Scopes")]
-  [Authorize]
+  //[RequiredScope(RequiredScopesConfigurationKey = "AzureAd:Scopes")]
+  //[Authorize]
   [ApiController]
   [ApiVersion("1.0")]
   [Route("api/v{version:apiVersion}/[controller]")]
   [ApiExplorerSettings(GroupName = "v1")]
   public class UserController : ControllerBase
   {
-    private IUserRepository _repository;
+    private readonly IBLLUser _bllUser;
 
-    public UserController(IUserRepository repository)
+    public UserController(IBLLUser bllUser)
     {
-      _repository = repository;
-    }
-
-    [MapToApiVersion("1.0")]
-    [Route("/login")]
-    [HttpGet]
-    public async Task<bool> Login(string username, string password)
-    {
-      BLLUser bllUser = new(_repository);
-      UserModel user = await bllUser.GetByUsername(username);
-
-      bool isAuthenticated = CryptographyUtil.VerifyHash(password, user.salt, user.hash);
-
-      return isAuthenticated;
+      _bllUser = bllUser;
     }
 
     [MapToApiVersion("1.0")]
     [HttpPost]
-    public async Task<string> Create(UserViewModel user)
+    public async Task<int> CreateUser([FromBody] UserViewModel userToCreate)
     {
-      BLLUser bllUser = new(_repository);
-      string createdUserId = await bllUser.CreateUser(user);
-
+      int createdUserId = await _bllUser.CreateUser(userToCreate);
       return createdUserId;
     }
 
     [MapToApiVersion("1.0")]
-    [HttpGet]
-    public async Task<UserModel> GetById(int id)
+    [HttpDelete("{user_id}")]
+    public async Task<bool> DeleteUserById(int user_id)
     {
-      BLLUser bllUser = new(_repository);
-      var user = await bllUser.GetById(id);
+      bool isDeleted = await _bllUser.DeleteUserById(user_id);
+      return isDeleted;
+    }
 
-      return user;
+    [MapToApiVersion("1.0")]
+    [HttpGet("{user_id}")]
+    public async Task<UserModel> GetUserById(int user_id)
+    {
+      UserModel createdUser = (UserModel)await _bllUser.GetUserById(user_id);
+      return createdUser;
+    }
+
+    [MapToApiVersion("1.0")]
+    [HttpPatch("{user_id}")]
+    public async Task<bool> PatchUser(int user_id, [FromBody] UserViewModel userToPatch)
+    {
+      bool isUserCreated = await _bllUser.PatchUser(user_id, userToPatch);
+      return isUserCreated;
     }
   }
 }

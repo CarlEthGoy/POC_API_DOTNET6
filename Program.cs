@@ -1,9 +1,12 @@
+using API.BLL;
+using API.Cryptography;
 using API.Database;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Identity.Web;
 using Microsoft.OpenApi.Models;
+using Neo4j.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -61,12 +64,18 @@ builder.Services.AddVersionedApiExplorer(options =>
   options.SubstituteApiVersionInUrl = true;
   options.AssumeDefaultVersionWhenUnspecified = true;
 });
-
-
 #endregion
 
-#region Neo4J
+#region Dependancy injection
+builder.Services.AddSingleton(GraphDatabase.Driver(builder.Configuration["Neo4JSettings:Connection"], AuthTokens.Basic(builder.Configuration["Neo4JSettings:User"], builder.Configuration["Neo4JSettings:Password"])));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IVaultRepository, VaultRepository>();
+builder.Services.AddScoped<IPasswordRepository, PasswordRepository>();
+builder.Services.AddScoped<ICryptographyUtil, CryptographyUtil>();
+builder.Services.AddScoped<IBLLUser, BLLUser>();
+builder.Services.AddScoped<IBLLVault, BLLVault>();
+builder.Services.AddScoped<IBLLPassword, BLLPassword>();
+builder.Services.AddScoped<IBLLAuthentication, BLLAuthentication>();
 #endregion
 
 builder.Services.AddControllers();

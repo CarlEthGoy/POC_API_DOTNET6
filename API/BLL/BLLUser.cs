@@ -12,6 +12,7 @@ namespace API.BLL
     Task<IUserModel> GetByUsername(string username);
     Task<IUserModel> GetUserById(int id);
     Task<bool> PatchUser(int id, UserViewModel userToUpdate);
+    Task<bool> PatchUserPassword(int id, string passwordToUpdate);
   }
 
   public class BLLUser : IBLLUser
@@ -78,11 +79,33 @@ namespace API.BLL
         userInDatabase.Name = userToUpdate.Name;
       }
 
-      //TODO AJOUTER SECURITE JUSTE LE COMPTE MAITRE PEUT CHANGER LE PWD...
-      if (!string.IsNullOrWhiteSpace(userToUpdate.Password))
+      userInDatabase.Id = id;
+
+      bool isUserUpdated = await _userRepository.UpdateUser(userInDatabase);
+      return isUserUpdated;
+    }
+
+    public async Task<bool> PatchUserPassword(int id, string passwordToUpdate)
+    {
+      // TODO: A partir du Token déterminer si le user as les droits de changer le password
+      bool canChangePassword = true;
+      if (!canChangePassword) { return false; }
+
+      if (!CryptographyUtil.Instance.IsPasswordValid(passwordToUpdate, EnumPasswordComplexity.Medium))
+      {
+        return false;
+      }
+
+      IUserModel userInDatabase = await GetUserById(id);
+      if (userInDatabase == null)
+      {
+        return false;
+      }
+
+      if (!string.IsNullOrWhiteSpace(passwordToUpdate))
       {
         userInDatabase.Salt = CryptographyUtil.Instance.GenerateSalt();
-        userInDatabase.Hash = CryptographyUtil.Instance.HashPassword(userToUpdate.Password, userInDatabase.Salt);
+        userInDatabase.Hash = CryptographyUtil.Instance.HashPassword(passwordToUpdate, userInDatabase.Salt);
       }
 
       userInDatabase.Id = id;

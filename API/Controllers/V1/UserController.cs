@@ -50,5 +50,13 @@ namespace API.Controllers.V1
       bool isUserCreated = await _bllUser.PatchUser(user_id, userToPatch);
       return isUserCreated;
     }
+
+    [MapToApiVersion("1.0")]
+    [HttpPatch("{user_id}/changepassword")]
+    public async Task<bool> ChangePassword(int user_id, [FromBody] UserViewModel userToPatch)
+    {
+      bool isUserCreated = await _bllUser.PatchUserPassword(user_id, userToPatch.Password);
+      return isUserCreated;
+    }
   }
 }

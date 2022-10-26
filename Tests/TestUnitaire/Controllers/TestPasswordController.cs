@@ -8,7 +8,6 @@ namespace Tests.TestUnitaire.Controllers
 {
   public class TestPasswordController : Test
   {
-
     [SetUp]
     public void Setup()
     {
@@ -128,6 +127,54 @@ namespace Tests.TestUnitaire.Controllers
 
       // Assert
       Assert.IsTrue(password == null);
+    }
+
+    [Test]
+    public void Test_PatchPassword_Fail()
+    {
+      var mockedBllPassword = new Mock<IBLLPassword>();
+      var mockedVaultRepository = new Mock<IVaultRepository>();
+
+      var mockedPassword = new PasswordViewModel
+      {
+        Application_name = "TestPass",
+        Password = "",
+        Username = "TestCarl",
+      };
+
+      mockedBllPassword.Setup(x => x.PatchPassword(1, mockedPassword).Result).Returns(false);
+
+      PasswordController passwordController = new(mockedVaultRepository.Object, mockedBllPassword.Object);
+
+      // Act
+      bool isVaultPatchFail = !passwordController.PatchPassword(1, mockedPassword).Result;
+
+      // Assert
+      Assert.IsTrue(isVaultPatchFail);
+    }
+
+    [Test]
+    public void Test_PatchPassword_Success()
+    {
+      var mockedBllPassword = new Mock<IBLLPassword>();
+      var mockedVaultRepository = new Mock<IVaultRepository>();
+
+      var mockedPassword = new PasswordViewModel
+      {
+        Application_name = "TestPass",
+        Password = "",
+        Username = "TestCarl",
+      };
+
+      mockedBllPassword.Setup(x => x.PatchPassword(1, mockedPassword).Result).Returns(true);
+
+      PasswordController passwordController = new(mockedVaultRepository.Object, mockedBllPassword.Object);
+
+      // Act
+      bool isVaultPatchSuccess = passwordController.PatchPassword(1, mockedPassword).Result;
+
+      // Assert
+      Assert.IsTrue(isVaultPatchSuccess);
     }
   }
 }

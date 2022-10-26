@@ -16,14 +16,15 @@ namespace API.Cryptography
     byte[] HashPassword(string password, byte[] salt);
 
     bool IsPasswordValid(string password, EnumPasswordComplexity complexity);
-    bool VerifyHash(string password, byte[] salt, byte[] hash);
 
+    bool VerifyHash(string password, byte[] salt, byte[] hash);
   }
 
   public class CryptographyUtil : ICryptographyUtil
   {
     // Singleton
     private static readonly Lazy<CryptographyUtil> lazy = new();
+
     private readonly Dictionary<EnumCharType, Regex> _chars = new(){
             { EnumCharType.Lowercase, new Regex(@"[abcdefghijklmnopqrstuvwxyz]")},
             { EnumCharType.Uppercase, new Regex(@"[ABCDEFGHIJKLMNOPQRSTUVWXYZ]")},
@@ -31,12 +32,30 @@ namespace API.Cryptography
             { EnumCharType.Special, new Regex(@"[!@#$%^&*()-_=+{}\[\]?<>.,]")}
     };
 
-    public static CryptographyUtil Instance { get { return lazy.Value; } }
+    public static CryptographyUtil Instance
+    { get { return lazy.Value; } }
+
     public string GenerateRandomPassword(EnumPasswordComplexity complexity)
     {
       Password pwd = new(true, true, true, true, (int)complexity);
       string password = pwd.Next();
       return password;
+    }
+
+    //TODO
+    public string EncryptasswordForString(string passwordToEncrypt, EnumPasswordComplexity complexity)
+    {
+      Password pwd = new(true, true, true, true, (int)complexity);
+      string password = pwd.Next();
+      return passwordToEncrypt;
+    }
+
+    //TODO
+    public string DecryptPasswordForString(string passwordToEncrypt, EnumPasswordComplexity complexity)
+    {
+      Password pwd = new(true, true, true, true, (int)complexity);
+      string password = pwd.Next();
+      return passwordToEncrypt;
     }
 
     public byte[] GenerateSalt()
@@ -73,6 +92,7 @@ namespace API.Cryptography
 
       return lowercaseValid && uppercaseValid && digitValid && specialValid;
     }
+
     public bool VerifyHash(string password, byte[] salt, byte[] hash)
     {
       byte[] newHash = HashPassword(password, salt);

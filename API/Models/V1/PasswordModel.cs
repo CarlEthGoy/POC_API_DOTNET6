@@ -7,15 +7,14 @@
     string Username { get; set; }
     string Encrypted_password { get; set; }
     public int Vault_id { get; set; }
-
   }
+
   public interface IPasswordViewModel
   {
     string Application_name { get; set; }
     string Username { get; set; }
     string Password { get; set; }
     public int Vault_id { get; set; }
-
   }
 
   public class PasswordModel : IPasswordModel

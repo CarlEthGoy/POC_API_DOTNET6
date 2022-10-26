@@ -7,10 +7,16 @@ namespace API.Database
   public interface IPasswordRepository
   {
     Task<int> CreatePassword(IPasswordModel passwordToAdd);
+
     Task<bool> CreateRelationshipMember(int vault_id, int password_id);
+
     Task<bool> DeletePasswordById(int password_id);
+
     IPasswordModel GeneratePasswordModelFromPasswordViewModel(IPasswordViewModel passwordViewModel);
+
     Task<IPasswordModel> GetPasswordById(int password_id);
+
+    Task<bool> UpdatePassword(IPasswordModel passwordToUpdate);
   }
 
   public class PasswordRepository : IPasswordRepository
@@ -19,7 +25,9 @@ namespace API.Database
     private readonly ICryptographyUtil _cryptoUtil;
     private readonly IDriver _driver;
     private bool _disposed = false;
+
     #region Database Actions
+
     public async Task<int> CreatePassword(IPasswordModel passwordToCreate)
     {
       if (string.IsNullOrWhiteSpace(passwordToCreate.Application_name))
@@ -173,7 +181,7 @@ namespace API.Database
       {
         return await session.ExecuteReadAsync(async transaction =>
         {
-          var query = @"MATCH (password:Password) 
+          var query = @"MATCH (password:Password)
                      WHERE id(password) = $id
                      RETURN collect({
                               id: ID(user),
@@ -196,9 +204,46 @@ namespace API.Database
         await session.CloseAsync();
       }
     }
-    #endregion
+
+    public async Task<bool> UpdatePassword(IPasswordModel passwordToUpdate)
+    {
+      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
+      try
+      {
+        return await session.ExecuteWriteAsync(async transaction =>
+        {
+          var query = @"MATCH (p:Password)
+                        WHERE id(p) = $password_id
+                        SET p.application_name: $application_name, p.encrypted_password: $encrypted_password, p.username: $username
+                        RETURN p";
+
+          var parameters = new Dictionary<string, object> {
+            { "password_id", passwordToUpdate.Id },
+            { "application_name", passwordToUpdate.Application_name },
+            { "encrypted_password", passwordToUpdate.Encrypted_password },
+            { "username", passwordToUpdate.Username}
+          };
+
+          var cursor = await transaction.RunAsync(query, parameters);
+          var result = await cursor.FetchAsync();
+
+          return result;
+        });
+      }
+      catch
+      {
+        return false;
+      }
+      finally
+      {
+        await session.CloseAsync();
+      }
+    }
+
+    #endregion Database Actions
 
     #region Cast
+
     private static List<PasswordModel> ToListPasswordModel(IEnumerable<IDictionary<string, object>> datas)
     {
       if (!datas.Any())
@@ -219,9 +264,11 @@ namespace API.Database
     {
       return ToListPasswordModel(datas).First();
     }
-    #endregion
+
+    #endregion Cast
 
     #region Constructeur et Dispose
+
     public PasswordRepository(IConfiguration configuration, ICryptographyUtil cryptoUtil, IDriver driver)
     {
       _cryptoUtil = cryptoUtil;
@@ -230,6 +277,7 @@ namespace API.Database
     }
 
     ~PasswordRepository() => Dispose(false);
+
     public void Dispose()
     {
       Dispose(true);
@@ -248,8 +296,7 @@ namespace API.Database
 
       _disposed = true;
     }
-    #endregion
 
-
+    #endregion Constructeur et Dispose
   }
 }

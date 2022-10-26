@@ -5,9 +5,9 @@ using Microsoft.Extensions.Configuration;
 using Moq;
 using Neo4j.Driver;
 using Tests.TestUnitaire;
+
 namespace Tests.TestIntegration
 {
-
   public class Test_VaultRepository : Test
   {
     [SetUp]
@@ -79,6 +79,5 @@ namespace Tests.TestIntegration
       Assert.IsTrue(isCreateRelationshipOwnerSuccess);
       Assert.IsTrue(isUserDeleted);
     }
-
   }
 }

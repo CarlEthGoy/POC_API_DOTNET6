@@ -10,7 +10,6 @@ namespace Tests.TestIntegration
 {
   public class Test_UserRepository : Test
   {
-
     [SetUp]
     public void Setup()
     {

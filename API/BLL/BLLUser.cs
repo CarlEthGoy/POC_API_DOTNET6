@@ -8,10 +8,15 @@ namespace API.BLL
   public interface IBLLUser
   {
     Task<int> CreateUser(IUserViewModel userViewModel);
+
     Task<bool> DeleteUserById(int id);
+
     Task<IUserModel> GetByUsername(string username);
+
     Task<IUserModel> GetUserById(int id);
+
     Task<bool> PatchUser(int id, UserViewModel userToUpdate);
+
     Task<bool> PatchUserPassword(int id, string passwordToUpdate);
   }
 
@@ -46,7 +51,6 @@ namespace API.BLL
 
       int createdUserId = await _userRepository.CreateUser(userModel);
       return createdUserId;
-
     }
 
     public async Task<bool> DeleteUserById(int id)
@@ -79,18 +83,12 @@ namespace API.BLL
         userInDatabase.Name = userToUpdate.Name;
       }
 
-      userInDatabase.Id = id;
-
       bool isUserUpdated = await _userRepository.UpdateUser(userInDatabase);
       return isUserUpdated;
     }
 
     public async Task<bool> PatchUserPassword(int id, string passwordToUpdate)
     {
-      // TODO: A partir du Token déterminer si le user as les droits de changer le password
-      bool canChangePassword = true;
-      if (!canChangePassword) { return false; }
-
       if (!CryptographyUtil.Instance.IsPasswordValid(passwordToUpdate, EnumPasswordComplexity.Medium))
       {
         return false;
@@ -107,8 +105,6 @@ namespace API.BLL
         userInDatabase.Salt = CryptographyUtil.Instance.GenerateSalt();
         userInDatabase.Hash = CryptographyUtil.Instance.HashPassword(passwordToUpdate, userInDatabase.Salt);
       }
-
-      userInDatabase.Id = id;
 
       bool isUserUpdated = await _userRepository.UpdateUser(userInDatabase);
       return isUserUpdated;

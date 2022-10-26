@@ -6,11 +6,18 @@ namespace API.Database
   public interface IVaultRepository
   {
     Task<bool> CreateRelationshipOwner(int user_id, int vault_id);
+
     Task<int> CreateVault(IVaultModel vaultToAdd);
+
     Task<bool> DeleteVaultById(int vaultId);
+
     IVaultModel GenerateVaultModelFromVaultViewModel(IVaultViewModel vaultViewModel);
+
     Task<List<IVaultModel>> GetAllVaultForUserId(int user_id);
+
     Task<IVaultModel> GetVaultById(int vault_id);
+
+    Task<bool> UpdateVault(IVaultModel vaultToUpdate);
   }
 
   public class VaultRepository : IVaultRepository
@@ -18,7 +25,42 @@ namespace API.Database
     private readonly IConfiguration _configuration;
     private readonly IDriver _driver;
     private bool _disposed = false;
+
     #region Database Actions
+
+    public async Task<bool> UpdateVault(IVaultModel vaultToUpdate)
+    {
+      var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
+      try
+      {
+        return await session.ExecuteWriteAsync(async transaction =>
+        {
+          var query = @"MATCH (v:Vault)
+                        WHERE id(v) = $vault_id
+                        SET v.name = $name
+                        RETURN v";
+
+          var parameters = new Dictionary<string, object> {
+            { "vault_id", vaultToUpdate.Id },
+            { "name", vaultToUpdate.Name }
+          };
+
+          var cursor = await transaction.RunAsync(query, parameters);
+          var result = await cursor.FetchAsync();
+
+          return result;
+        });
+      }
+      catch
+      {
+        return false;
+      }
+      finally
+      {
+        await session.CloseAsync();
+      }
+    }
+
     public async Task<bool> CreateRelationshipOwner(int user_id, int vault_id)
     {
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
@@ -187,9 +229,11 @@ namespace API.Database
         await session.CloseAsync();
       }
     }
-    #endregion
+
+    #endregion Database Actions
 
     #region Cast
+
     private static List<VaultModel> ToListVaultModel(IEnumerable<IDictionary<string, object>> datas)
     {
       if (!datas.Any())
@@ -208,9 +252,11 @@ namespace API.Database
     {
       return ToListVaultModel(datas).First();
     }
-    #endregion
+
+    #endregion Cast
 
     #region Constructeur et Dispose
+
     public VaultRepository(IConfiguration configuration, IDriver driver)
     {
       _configuration = configuration;
@@ -218,6 +264,7 @@ namespace API.Database
     }
 
     ~VaultRepository() => Dispose(false);
+
     public void Dispose()
     {
       Dispose(true);
@@ -236,8 +283,7 @@ namespace API.Database
 
       _disposed = true;
     }
-    #endregion
 
-
+    #endregion Constructeur et Dispose
   }
 }

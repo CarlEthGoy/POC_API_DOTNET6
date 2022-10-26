@@ -7,7 +7,6 @@
     string Name { get; set; }
     byte[] Hash { get; set; }
     byte[] Salt { get; set; }
-
   }
 
   public interface IUserViewModel
@@ -16,7 +15,6 @@
     string Name { get; set; }
     string Password { get; set; }
   }
-
 
   public class UserModel : IUserModel
   {

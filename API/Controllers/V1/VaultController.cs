@@ -39,8 +39,16 @@ namespace API.Controllers.V1
     [HttpGet("{vault_id}")]
     public async Task<VaultModel> GetVaultById(int vault_id)
     {
-      VaultModel createdVault = (VaultModel)await _bllVault.GetVaultById(vault_id);
-      return createdVault;
+      var vault = (VaultModel)await _bllVault.GetVaultById(vault_id);
+      return vault;
+    }
+
+    [MapToApiVersion("1.0")]
+    [HttpPatch("{user_id}")]
+    public async Task<bool> PatchVault(int user_id, [FromBody] VaultViewModel vaultToPatch)
+    {
+      bool isVaultPatched = await _bllVault.PatchVault(user_id, vaultToPatch);
+      return isVaultPatched;
     }
   }
 }

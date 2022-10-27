@@ -7,11 +7,17 @@ namespace API.Database
   public interface IUserRepository
   {
     Task<int> CreateUser(IUserModel userToCreate);
+
     Task<bool> DeleteUserById(int id);
+
     IUserModel GenerateUserModelFromUserViewModel(IUserViewModel userViewModel);
+
     Task<IUserModel> GetUserById(int id);
+
     Task<IUserModel> GetUserByUsername(string username);
+
     Task<bool> IsUsernameAlreadyUsed(string username);
+
     Task<bool> UpdateUser(IUserModel userToUpdate);
   }
 
@@ -21,6 +27,7 @@ namespace API.Database
     private readonly ICryptographyUtil _cryptoUtil;
     private readonly IDriver _driver;
     private bool _disposed = false;
+
     #region Database Actions
 
     public async Task<int> CreateUser(IUserModel userToCreate)
@@ -105,7 +112,7 @@ namespace API.Database
       {
         return await session.ExecuteReadAsync(async transaction =>
         {
-          var query = @"MATCH (user:User) 
+          var query = @"MATCH (user:User)
                      WHERE id(user) = $id
                      RETURN collect({name: user.name,
                               id: ID(user),
@@ -136,7 +143,7 @@ namespace API.Database
       {
         return await session.ExecuteReadAsync(async transaction =>
         {
-          var query = @"MATCH (user:User) 
+          var query = @"MATCH (user:User)
                      WHERE user.username = $username
                      RETURN collect({
                               name: user.name,
@@ -175,9 +182,9 @@ namespace API.Database
       {
         return await session.ExecuteWriteAsync(async transaction =>
         {
-          var query = @"MATCH (u:User) 
-                        WHERE id(u) = $user_id 
-                        SET u.name = $name, u.hash = $hash, u.salt = $salt 
+          var query = @"MATCH (u:User)
+                        WHERE id(u) = $user_id
+                        SET u.name = $name, u.hash = $hash, u.salt = $salt
                         RETURN u";
 
           var parameters = new Dictionary<string, object> {
@@ -202,9 +209,11 @@ namespace API.Database
         await session.CloseAsync();
       }
     }
-    #endregion
+
+    #endregion Database Actions
 
     #region Cast
+
     private static List<UserModel> ToListUserModel(IEnumerable<IDictionary<string, object>> datas)
     {
       if (!datas.Any())
@@ -226,9 +235,11 @@ namespace API.Database
     {
       return ToListUserModel(datas).First();
     }
-    #endregion
+
+    #endregion Cast
 
     #region Constructeur et Dispose
+
     public UserRepository(IConfiguration configuration, ICryptographyUtil cryptoUtil, IDriver driver)
     {
       _cryptoUtil = cryptoUtil;
@@ -237,6 +248,7 @@ namespace API.Database
     }
 
     ~UserRepository() => Dispose(false);
+
     public void Dispose()
     {
       Dispose(true);
@@ -255,8 +267,7 @@ namespace API.Database
 
       _disposed = true;
     }
-    #endregion
 
-
+    #endregion Constructeur et Dispose
   }
 }

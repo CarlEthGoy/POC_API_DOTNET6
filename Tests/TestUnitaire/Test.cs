@@ -2,17 +2,15 @@
 
 namespace Tests.TestUnitaire
 {
-
-    public class Test
+  public class Test
+  {
+    public static IConfiguration InitConfiguration()
     {
-        public static IConfiguration InitConfiguration()
-        {
-            var config = new ConfigurationBuilder()
-               .AddJsonFile("appsettings.test.json")
-                .AddEnvironmentVariables()
-                .Build();
-            return config;
-        }
-
+      var config = new ConfigurationBuilder()
+         .AddJsonFile("appsettings.test.json")
+          .AddEnvironmentVariables()
+          .Build();
+      return config;
     }
+  }
 }

@@ -45,7 +45,6 @@ namespace Tests.TestIntegration
       VaultRepository vaultRepository = new(mockConfiguration.Object, driver);
       PasswordRepository passwordRepository = new(mockConfiguration.Object, mockCryptoUtil.Object, driver);
 
-
       var mockedUser = new UserModel
       {
         Hash = new byte[16],
@@ -56,7 +55,6 @@ namespace Tests.TestIntegration
 
       var mockedVault = new VaultModel { Name = "TestVault" };
       var mockedPassword = new PasswordModel { Application_name = "TestVault" };
-
 
       // Act CreateUser
       var createdUserId = userRepository.CreateUser(mockedUser).Result;

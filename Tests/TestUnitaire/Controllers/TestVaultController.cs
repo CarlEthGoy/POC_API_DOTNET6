@@ -118,5 +118,45 @@ namespace Tests.TestUnitaire.Controllers
       // Assert
       Assert.IsTrue(vault != null);
     }
+
+    [Test]
+    public void Test_PatchVault_Fail()
+    {
+      var mockedBllVault = new Mock<IBLLVault>();
+
+      var mockedVault = new VaultViewModel
+      {
+        Name = "TestVault"
+      };
+
+      mockedBllVault.Setup(x => x.PatchVault(1, mockedVault).Result).Returns(false);
+
+      VaultController vaultController = new(mockedBllVault.Object);
+      // Act
+      bool isVaultPatchFail = !vaultController.PatchVault(1, mockedVault).Result;
+
+      // Assert
+      Assert.IsTrue(isVaultPatchFail);
+    }
+
+    [Test]
+    public void Test_PatchVault_Success()
+    {
+      var mockedBllVault = new Mock<IBLLVault>();
+
+      var mockedVault = new VaultViewModel
+      {
+        Name = "TestVault"
+      };
+
+      mockedBllVault.Setup(x => x.PatchVault(1, mockedVault).Result).Returns(true);
+
+      VaultController vaultController = new(mockedBllVault.Object);
+      // Act
+      bool isVaultPatchSuccess = vaultController.PatchVault(1, mockedVault).Result;
+
+      // Assert
+      Assert.IsTrue(isVaultPatchSuccess);
+    }
   }
 }

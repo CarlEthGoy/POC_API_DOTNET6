@@ -42,8 +42,16 @@ namespace API.Controllers.V1
     [HttpGet("{password_id}")]
     public async Task<PasswordModel> GetPasswordById(int password_id)
     {
-      PasswordModel createdVault = (PasswordModel)await _bllPassword.GetPasswordById(password_id);
-      return createdVault;
+      PasswordModel password = (PasswordModel)await _bllPassword.GetPasswordById(password_id);
+      return password;
+    }
+
+    [MapToApiVersion("1.0")]
+    [HttpPatch("{user_id}")]
+    public async Task<bool> PatchPassword(int user_id, [FromBody] PasswordViewModel passwordToPatch)
+    {
+      bool isPasswordPatched = await _bllPassword.PatchPassword(user_id, passwordToPatch);
+      return isPasswordPatched;
     }
   }
 }

@@ -8,7 +8,6 @@ namespace Tests.TestUnitaire.BLL
 {
   public class Test_BLLUser : Test
   {
-
     [SetUp]
     public void Setup()
     {
@@ -200,7 +199,6 @@ namespace Tests.TestUnitaire.BLL
         Name = "Test",
         Salt = new byte[16]
       };
-
 
       var bllUser = new BLLUser(mockedUserRepository.Object);
 

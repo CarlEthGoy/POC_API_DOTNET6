@@ -20,6 +20,14 @@ namespace API.Controllers.V1
     }
 
     [MapToApiVersion("1.0")]
+    [HttpPatch("{user_id}/changepassword")]
+    public async Task<bool> ChangePassword(int user_id, [FromBody] UserViewModel userToPatch)
+    {
+      bool isPasswordChanged = await _bllUser.PatchUserPassword(user_id, userToPatch.Password);
+      return isPasswordChanged;
+    }
+
+    [MapToApiVersion("1.0")]
     [HttpPost]
     public async Task<int> CreateUser([FromBody] UserViewModel userToCreate)
     {
@@ -39,24 +47,16 @@ namespace API.Controllers.V1
     [HttpGet("{user_id}")]
     public async Task<UserModel> GetUserById(int user_id)
     {
-      UserModel createdUser = (UserModel)await _bllUser.GetUserById(user_id);
-      return createdUser;
+      UserModel user = (UserModel)await _bllUser.GetUserById(user_id);
+      return user;
     }
 
     [MapToApiVersion("1.0")]
     [HttpPatch("{user_id}")]
     public async Task<bool> PatchUser(int user_id, [FromBody] UserViewModel userToPatch)
     {
-      bool isUserCreated = await _bllUser.PatchUser(user_id, userToPatch);
-      return isUserCreated;
-    }
-
-    [MapToApiVersion("1.0")]
-    [HttpPatch("{user_id}/changepassword")]
-    public async Task<bool> ChangePassword(int user_id, [FromBody] UserViewModel userToPatch)
-    {
-      bool isUserCreated = await _bllUser.PatchUserPassword(user_id, userToPatch.Password);
-      return isUserCreated;
+      bool isUserPatched = await _bllUser.PatchUser(user_id, userToPatch);
+      return isUserPatched;
     }
   }
 }

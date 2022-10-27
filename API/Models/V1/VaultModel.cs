@@ -6,6 +6,7 @@
     string Name { get; set; }
     int User_id { get; set; }
   }
+
   public interface IVaultViewModel
   {
     string Name { get; set; }
@@ -24,6 +25,7 @@
       this.Id = 0;
       this.Name = "";
     }
+
     public VaultModel(int id, string name, int user_id)
     {
       this.User_id = user_id;
@@ -42,6 +44,7 @@
       this.Name = "";
       this.User_id = 0;
     }
+
     public VaultViewModel(string name, int user_id)
     {
       this.Name = name;

@@ -1,4 +1,5 @@
-﻿using API.Database;
+﻿using API.Cryptography;
+using API.Database;
 using API.Models.V1;
 
 namespace API.BLL
@@ -6,8 +7,12 @@ namespace API.BLL
   public interface IBLLPassword
   {
     Task<int> CreatePassword(IPasswordViewModel passwordToCreate);
+
     Task<bool> DeletePasswordById(int password_id);
+
     Task<IPasswordModel> GetPasswordById(int password_id);
+
+    Task<bool> PatchPassword(int id, PasswordViewModel passwordToPatch);
   }
 
   public class BLLPassword : IBLLPassword
@@ -15,6 +20,7 @@ namespace API.BLL
     private readonly IPasswordRepository _passwordRepository;
     private readonly IUserRepository _userRepository;
     private readonly IVaultRepository _vaultRepository;
+
     public BLLPassword(IPasswordRepository passwordRepository, IVaultRepository vaultRepository, IUserRepository userRepository)
     {
       _passwordRepository = passwordRepository;
@@ -55,6 +61,33 @@ namespace API.BLL
     {
       IPasswordModel password = await _passwordRepository.GetPasswordById(password_id);
       return password;
+    }
+
+    public async Task<bool> PatchPassword(int id, PasswordViewModel passwordToPatch)
+    {
+      IPasswordModel passwordInDatabase = await GetPasswordById(id);
+      if (passwordInDatabase == null)
+      {
+        return false;
+      }
+
+      if (passwordInDatabase.Application_name != passwordToPatch.Application_name)
+      {
+        passwordInDatabase.Application_name = passwordToPatch.Application_name;
+      }
+
+      if (passwordInDatabase.Username != passwordToPatch.Username)
+      {
+        passwordInDatabase.Username = passwordToPatch.Username;
+      }
+
+      if (!string.IsNullOrWhiteSpace(passwordToPatch.Password))
+      {
+        passwordInDatabase.Encrypted_password = CryptographyUtil.Instance.EncryptasswordForString(passwordToPatch.Password, Enum.EnumPasswordComplexity.Medium);
+      }
+
+      bool isPasswordPatched = await _passwordRepository.UpdatePassword(passwordInDatabase);
+      return isPasswordPatched;
     }
   }
 }

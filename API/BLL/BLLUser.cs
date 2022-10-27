@@ -1,6 +1,7 @@
 ﻿using API.Cryptography;
 using API.Database;
 using API.Enum;
+using API.Helper;
 using API.Models.V1;
 
 namespace API.BLL
@@ -11,22 +12,26 @@ namespace API.BLL
 
     Task<bool> DeleteUserById(int id);
 
-    Task<IUserModel> GetByUsername(string username);
+    Task<IUserModel?> GetByUsername(string username);
 
-    Task<IUserModel> GetUserById(int id);
+    Task<IUserModel?> GetUserById(int id);
 
     Task<bool> PatchUser(int id, UserViewModel userToUpdate);
 
-    Task<bool> PatchUserPassword(int id, string passwordToUpdate);
+    Task<bool> PatchUserPassword(int id, string currentPassword, string newPassword);
   }
 
   public class BLLUser : IBLLUser
   {
     private readonly IUserRepository _userRepository;
+    private readonly ICryptographyUtil _cryptographyUtil;
+    private readonly IAuthorizationHelper _authorizationHelper;
 
-    public BLLUser(IUserRepository repository)
+    public BLLUser(IUserRepository repository, ICryptographyUtil cryptographyUtil, IAuthorizationHelper authorizationHelper)
     {
       _userRepository = repository;
+      _cryptographyUtil = cryptographyUtil;
+      _authorizationHelper = authorizationHelper;
     }
 
     public async Task<int> CreateUser(IUserViewModel userToCreate)
@@ -36,8 +41,8 @@ namespace API.BLL
         throw new Exception("Username is required.");
       }
 
-      bool isPasswordValid = CryptographyUtil.Instance.IsPasswordValid(userToCreate.Password, EnumPasswordComplexity.Medium);
-      if (!isPasswordValid)
+      bool isPasswordInvalid = !CryptographyUtil.Instance.IsPasswordValid(userToCreate.Password, EnumPasswordComplexity.Medium);
+      if (isPasswordInvalid)
       {
         throw new Exception("Password is invalid.");
       }
@@ -55,16 +60,21 @@ namespace API.BLL
 
     public async Task<bool> DeleteUserById(int id)
     {
+      if (await _authorizationHelper.IsRefusedToPerformActionOnUser(id))
+      {
+        return false;
+      }
+
       return await _userRepository.DeleteUserById(id);
     }
 
-    public async Task<IUserModel> GetByUsername(string username)
+    public async Task<IUserModel?> GetByUsername(string username)
     {
       var user = await _userRepository.GetUserByUsername(username);
       return user;
     }
 
-    public async Task<IUserModel> GetUserById(int user_id)
+    public async Task<IUserModel?> GetUserById(int user_id)
     {
       var user = await _userRepository.GetUserById(user_id);
       return user;
@@ -78,6 +88,11 @@ namespace API.BLL
         return false;
       }
 
+      if (_authorizationHelper.IsRefusedToPerformActionOnUser(id, userInDatabase))
+      {
+        return false;
+      }
+
       if (userInDatabase.Name != userToUpdate.Name)
       {
         userInDatabase.Name = userToUpdate.Name;
@@ -87,9 +102,9 @@ namespace API.BLL
       return isUserUpdated;
     }
 
-    public async Task<bool> PatchUserPassword(int id, string passwordToUpdate)
+    public async Task<bool> PatchUserPassword(int id, string currentPassword, string newPassword)
     {
-      if (!CryptographyUtil.Instance.IsPasswordValid(passwordToUpdate, EnumPasswordComplexity.Medium))
+      if (string.IsNullOrWhiteSpace(newPassword) || string.IsNullOrWhiteSpace(currentPassword))
       {
         return false;
       }
@@ -100,11 +115,23 @@ namespace API.BLL
         return false;
       }
 
-      if (!string.IsNullOrWhiteSpace(passwordToUpdate))
+      if (_authorizationHelper.IsRefusedToPerformActionOnUser(id, userInDatabase))
       {
-        userInDatabase.Salt = CryptographyUtil.Instance.GenerateSalt();
-        userInDatabase.Hash = CryptographyUtil.Instance.HashPassword(passwordToUpdate, userInDatabase.Salt);
+        return false;
       }
+
+      if (!_cryptographyUtil.IsPasswordValid(newPassword, EnumPasswordComplexity.Medium))
+      {
+        return false;
+      }
+
+      if (!_cryptographyUtil.VerifyHash(currentPassword, userInDatabase.Salt, userInDatabase.Hash))
+      {
+        return false;
+      }
+
+      userInDatabase.Salt = _cryptographyUtil.GenerateSalt();
+      userInDatabase.Hash = _cryptographyUtil.HashPassword(newPassword, userInDatabase.Salt);
 
       bool isUserUpdated = await _userRepository.UpdateUser(userInDatabase);
       return isUserUpdated;

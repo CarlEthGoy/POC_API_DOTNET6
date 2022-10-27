@@ -1,4 +1,5 @@
 ﻿using API.Database;
+using API.Helper;
 using API.Models.V1;
 
 namespace API.BLL
@@ -18,11 +19,13 @@ namespace API.BLL
   {
     private readonly IUserRepository _userRepository;
     private readonly IVaultRepository _vaultRepository;
+    private readonly IAuthorizationHelper _authorizationHelper;
 
-    public BLLVault(IVaultRepository vaultRepository, IUserRepository userRepository)
+    public BLLVault(IVaultRepository vaultRepository, IUserRepository userRepository, IAuthorizationHelper authorization)
     {
       _vaultRepository = vaultRepository;
       _userRepository = userRepository;
+      _authorizationHelper = authorization;
     }
 
     public async Task<int> CreateVault(IVaultViewModel vaultViewModelToCreate)
@@ -32,9 +35,20 @@ namespace API.BLL
         throw new Exception("Name is required.");
       }
 
-      if (await _userRepository.GetUserById(vaultViewModelToCreate.User_id) == null)
+      var user = await _userRepository.GetUserById(vaultViewModelToCreate.User_id);
+      if (user == null)
       {
         throw new Exception($"The user with id : {vaultViewModelToCreate.User_id} doesn't exist!");
+      }
+
+      if (await _authorizationHelper.IsRefusedToPerformActionOnUser(vaultViewModelToCreate.User_id))
+      {
+        throw new Exception($"You don't have the authorization!");
+      }
+
+      if (await _authorizationHelper.IsRefusedToPerformActionOnUser(user.Id))
+      {
+        throw new Exception($"You don't have the authorization!");
       }
 
       IVaultModel vaultModelToCreate = _vaultRepository.GenerateVaultModelFromVaultViewModel(vaultViewModelToCreate);
@@ -42,8 +56,8 @@ namespace API.BLL
       int createdVaultId = await _vaultRepository.CreateVault(vaultModelToCreate);
       vaultModelToCreate.Id = createdVaultId;
 
-      bool createdRelationShip = await _vaultRepository.CreateRelationshipOwner(vaultModelToCreate.User_id, vaultModelToCreate.Id);
-      if (!createdRelationShip)
+      bool isCreatedRelationShipFailed = !await _vaultRepository.CreateRelationshipOwner(vaultModelToCreate.User_id, vaultModelToCreate.Id);
+      if (isCreatedRelationShipFailed)
       {
         throw new Exception($"Couln't create the relationship between vault:{createdVaultId} and user:{vaultViewModelToCreate.User_id} !");
       }
@@ -53,6 +67,17 @@ namespace API.BLL
 
     public async Task<bool> DeleteVaultById(int vault_id)
     {
+      IVaultModel vaultInDatabase = await GetVaultById(vault_id);
+      if (vaultInDatabase == null)
+      {
+        return false;
+      }
+
+      if (await _authorizationHelper.IsRefusedToPerformActionOnUser(vaultInDatabase.User_id))
+      {
+        throw new Exception($"You don't have the authorization!");
+      }
+
       return await _vaultRepository.DeleteVaultById(vault_id);
     }
 
@@ -62,12 +87,17 @@ namespace API.BLL
       return vault;
     }
 
-    public async Task<bool> PatchVault(int id, VaultViewModel vaultToPatch)
+    public async Task<bool> PatchVault(int vault_id, VaultViewModel vaultToPatch)
     {
-      IVaultModel vaultInDatabase = await GetVaultById(id);
+      IVaultModel vaultInDatabase = await GetVaultById(vault_id);
       if (vaultInDatabase == null)
       {
         return false;
+      }
+
+      if (await _authorizationHelper.IsRefusedToPerformActionOnUser(vaultInDatabase.User_id))
+      {
+        throw new Exception($"You don't have the authorization!");
       }
 
       if (vaultInDatabase.Name != vaultToPatch.Name)

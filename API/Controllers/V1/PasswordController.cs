@@ -1,20 +1,24 @@
 ﻿using API.BLL;
 using API.Database;
 using API.Models.V1;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Web.Resource;
 
 namespace API.Controllers.V1
 {
-  //[RequiredScope(RequiredScopesConfigurationKey = "AzureAd:Scopes")]
-  //[Authorize]
+  [RequiredScope(RequiredScopesConfigurationKey = "AzureAd:Scopes")]
+  [Authorize]
   [ApiController]
   [ApiVersion("1.0")]
   [Route("api/v{version:apiVersion}/[controller]")]
   [ApiExplorerSettings(GroupName = "v1")]
   public class PasswordController : ControllerBase
   {
+#pragma warning disable IDE0052 // Remove unread private members because it is used for TESTS
     private readonly IBLLPassword _bllPassword;
     private readonly IVaultRepository _vaultRepository;
+#pragma warning restore IDE0052 // Remove unread private membersbecause it is used for TESTS
 
     public PasswordController(IVaultRepository vaultRepository, IBLLPassword bllPassword)
     {

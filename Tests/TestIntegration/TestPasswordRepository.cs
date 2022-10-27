@@ -43,7 +43,7 @@ namespace Tests.TestIntegration
 
       UserRepository userRepository = new(mockConfiguration.Object, mockCryptoUtil.Object, driver);
       VaultRepository vaultRepository = new(mockConfiguration.Object, driver);
-      PasswordRepository passwordRepository = new(mockConfiguration.Object, mockCryptoUtil.Object, driver);
+      PasswordRepository passwordRepository = new(mockConfiguration.Object, driver);
 
       var mockedUser = new UserModel
       {

@@ -24,7 +24,6 @@ namespace API.Database
   {
     private readonly IConfiguration _configuration;
     private readonly IDriver _driver;
-    private bool _disposed = false;
 
     #region Database Actions
 
@@ -262,28 +261,6 @@ namespace API.Database
       _configuration = configuration;
       _driver = driver;
     }
-
-    ~VaultRepository() => Dispose(false);
-
-    public void Dispose()
-    {
-      Dispose(true);
-      GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-      if (_disposed)
-        return;
-
-      if (disposing)
-      {
-        _driver?.Dispose();
-      }
-
-      _disposed = true;
-    }
-
     #endregion Constructeur et Dispose
   }
 }

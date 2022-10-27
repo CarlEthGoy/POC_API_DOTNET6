@@ -12,9 +12,9 @@ namespace API.Database
 
     IUserModel GenerateUserModelFromUserViewModel(IUserViewModel userViewModel);
 
-    Task<IUserModel> GetUserById(int id);
+    Task<IUserModel?> GetUserById(int id);
 
-    Task<IUserModel> GetUserByUsername(string username);
+    Task<IUserModel?> GetUserByUsername(string username);
 
     Task<bool> IsUsernameAlreadyUsed(string username);
 
@@ -26,7 +26,6 @@ namespace API.Database
     private readonly IConfiguration _configuration;
     private readonly ICryptographyUtil _cryptoUtil;
     private readonly IDriver _driver;
-    private bool _disposed = false;
 
     #region Database Actions
 
@@ -105,7 +104,7 @@ namespace API.Database
       return userModel;
     }
 
-    public async Task<IUserModel> GetUserById(int user_id)
+    public async Task<IUserModel?> GetUserById(int user_id)
     {
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
       try
@@ -136,7 +135,7 @@ namespace API.Database
       }
     }
 
-    public async Task<IUserModel> GetUserByUsername(string username)
+    public async Task<IUserModel?> GetUserByUsername(string username)
     {
       var session = _driver.AsyncSession(configBuilder => configBuilder.WithDatabase(_configuration["Neo4JSettings:Database"]));
       try
@@ -161,6 +160,10 @@ namespace API.Database
 
           return await cursor.SingleAsync(record => ToUserModel(record["user"].As<List<IDictionary<string, object>>>()));
         });
+      }
+      catch
+      {
+        return null;
       }
       finally
       {
@@ -246,28 +249,6 @@ namespace API.Database
       _configuration = configuration;
       _driver = driver;
     }
-
-    ~UserRepository() => Dispose(false);
-
-    public void Dispose()
-    {
-      Dispose(true);
-      GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-      if (_disposed)
-        return;
-
-      if (disposing)
-      {
-        _driver?.Dispose();
-      }
-
-      _disposed = true;
-    }
-
     #endregion Constructeur et Dispose
   }
 }

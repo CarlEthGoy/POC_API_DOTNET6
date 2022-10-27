@@ -1,5 +1,6 @@
 ﻿using API.BLL;
 using API.Database;
+using API.Helper;
 using API.Models.V1;
 using Moq;
 
@@ -19,6 +20,7 @@ namespace Tests.TestUnitaire.BLL
       var mockedUserRepository = new Mock<IUserRepository>();
       var mockedVaultRepository = new Mock<IVaultRepository>();
       var mockedPasswordRepository = new Mock<IPasswordRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
 
       var mockedPasswordViewModel = new PasswordViewModel
       {
@@ -45,7 +47,7 @@ namespace Tests.TestUnitaire.BLL
       mockedVaultRepository.Setup(x => x.GetVaultById(mockedPasswordModel.Vault_id).Result)
                           .Returns(new VaultModel { });
 
-      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object);
+      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var createdPasswordId = bllPassword.CreatePassword(mockedPasswordViewModel).Result;
@@ -61,6 +63,7 @@ namespace Tests.TestUnitaire.BLL
       var mockedUserRepository = new Mock<IUserRepository>();
       var mockedVaultRepository = new Mock<IVaultRepository>();
       var mockedPasswordRepository = new Mock<IPasswordRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
 
       var mockedPasswordViewModel = new PasswordViewModel
       {
@@ -87,7 +90,7 @@ namespace Tests.TestUnitaire.BLL
       mockedVaultRepository.Setup(x => x.GetVaultById(mockedPasswordModel.Vault_id).Result)
                           .Returns(new VaultModel { });
 
-      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object);
+      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var createdPasswordId = bllPassword.CreatePassword(mockedPasswordViewModel).Result;
@@ -103,6 +106,7 @@ namespace Tests.TestUnitaire.BLL
       var mockedUserRepository = new Mock<IUserRepository>();
       var mockedVaultRepository = new Mock<IVaultRepository>();
       var mockedPasswordRepository = new Mock<IPasswordRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
 
       var mockedPasswordToDelete = new PasswordModel
       {
@@ -113,7 +117,14 @@ namespace Tests.TestUnitaire.BLL
       mockedPasswordRepository.Setup(x => x.DeletePasswordById(mockedPasswordToDelete.Id).Result)
         .Returns(false);
 
-      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object);
+      mockedAuthorizationHelper.Setup(x => x.IsRefusedToPerformActionOnUser(1).Result)
+                         .Returns(false);
+
+      mockedPasswordRepository.Setup(x => x.GetPasswordById(1).Result).Returns(new PasswordModel { Id = 2, Vault_id = 3 });
+
+      mockedVaultRepository.Setup(x => x.GetVaultById(3).Result).Returns(new VaultModel { Id = 3, User_id = 1 });
+
+      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var isDeleted = bllPassword.DeletePasswordById(mockedPasswordToDelete.Id).Result;
@@ -129,6 +140,7 @@ namespace Tests.TestUnitaire.BLL
       var mockedUserRepository = new Mock<IUserRepository>();
       var mockedVaultRepository = new Mock<IVaultRepository>();
       var mockedPasswordRepository = new Mock<IPasswordRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
 
       var mockedPasswordToDelete = new PasswordModel
       {
@@ -139,7 +151,14 @@ namespace Tests.TestUnitaire.BLL
       mockedPasswordRepository.Setup(x => x.DeletePasswordById(mockedPasswordToDelete.Id).Result)
         .Returns(true);
 
-      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object);
+      mockedAuthorizationHelper.Setup(x => x.IsRefusedToPerformActionOnUser(1).Result)
+                   .Returns(false);
+
+      mockedPasswordRepository.Setup(x => x.GetPasswordById(1).Result).Returns(new PasswordModel { Id = 2, Vault_id = 3 });
+
+      mockedVaultRepository.Setup(x => x.GetVaultById(3).Result).Returns(new VaultModel { Id = 3, User_id = 1 });
+
+      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var isDeleted = bllPassword.DeletePasswordById(mockedPasswordToDelete.Id).Result;
@@ -155,13 +174,15 @@ namespace Tests.TestUnitaire.BLL
       var mockedPasswordRepository = new Mock<IPasswordRepository>();
       var mockedVaultRepository = new Mock<IVaultRepository>();
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+
 
       var mockedPasswordToGet = new PasswordModel
       {
         Application_name = "Test",
       };
 
-      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object);
+      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var Password = bllPassword.GetPasswordById(mockedPasswordToGet.Id).Result;
@@ -177,6 +198,7 @@ namespace Tests.TestUnitaire.BLL
       var mockedPasswordRepository = new Mock<IPasswordRepository>();
       var mockedVaultRepository = new Mock<IVaultRepository>();
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
 
       var mockedPasswordToGet = new PasswordModel
       {
@@ -186,7 +208,7 @@ namespace Tests.TestUnitaire.BLL
       mockedPasswordRepository.Setup(x => x.GetPasswordById(mockedPasswordToGet.Id).Result)
                           .Returns(mockedPasswordToGet);
 
-      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object);
+      var bllPassword = new BLLPassword(mockedPasswordRepository.Object, mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var Password = bllPassword.GetPasswordById(mockedPasswordToGet.Id).Result;

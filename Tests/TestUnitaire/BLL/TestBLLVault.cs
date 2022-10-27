@@ -1,5 +1,6 @@
 ﻿using API.BLL;
 using API.Database;
+using API.Helper;
 using API.Models.V1;
 using Moq;
 
@@ -18,6 +19,7 @@ namespace Tests.TestUnitaire.BLL
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
       var mockedVaultRepository = new Mock<IVaultRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
 
       var mockedVaultViewModel = new VaultViewModel
       {
@@ -44,7 +46,7 @@ namespace Tests.TestUnitaire.BLL
       mockedUserRepository.Setup(x => x.GetUserById(mockedVaultModel.User_id).Result)
                           .Returns(new UserModel { });
 
-      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object);
+      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var createdVaultId = bllVault.CreateVault(mockedVaultViewModel).Result;
@@ -59,6 +61,8 @@ namespace Tests.TestUnitaire.BLL
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
       var mockedVaultRepository = new Mock<IVaultRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+
 
       var mockedVaultViewModel = new VaultViewModel
       {
@@ -85,7 +89,7 @@ namespace Tests.TestUnitaire.BLL
       mockedUserRepository.Setup(x => x.GetUserById(mockedVaultModel.User_id).Result)
                           .Returns(new UserModel { });
 
-      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object);
+      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var createdVaultId = bllVault.CreateVault(mockedVaultViewModel).Result;
@@ -100,6 +104,7 @@ namespace Tests.TestUnitaire.BLL
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
       var mockedVaultRepository = new Mock<IVaultRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
 
       var mockedVaultToDelete = new VaultModel
       {
@@ -110,7 +115,12 @@ namespace Tests.TestUnitaire.BLL
       mockedVaultRepository.Setup(x => x.DeleteVaultById(mockedVaultToDelete.Id).Result)
         .Returns(false);
 
-      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object);
+      mockedAuthorizationHelper.Setup(x => x.IsRefusedToPerformActionOnUser(1).Result)
+                   .Returns(false);
+
+      mockedVaultRepository.Setup(x => x.GetVaultById(1).Result).Returns(new VaultModel { Id = 1, User_id = 1 });
+
+      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var isDeleted = bllVault.DeleteVaultById(mockedVaultToDelete.Id).Result;
@@ -125,6 +135,7 @@ namespace Tests.TestUnitaire.BLL
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
       var mockedVaultRepository = new Mock<IVaultRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
 
       var mockedVaultToDelete = new VaultModel
       {
@@ -135,7 +146,12 @@ namespace Tests.TestUnitaire.BLL
       mockedVaultRepository.Setup(x => x.DeleteVaultById(mockedVaultToDelete.Id).Result)
         .Returns(true);
 
-      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object);
+      mockedAuthorizationHelper.Setup(x => x.IsRefusedToPerformActionOnUser(1).Result)
+                   .Returns(false);
+
+      mockedVaultRepository.Setup(x => x.GetVaultById(1).Result).Returns(new VaultModel { Id = 1, User_id = 1 });
+
+      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var isDeleted = bllVault.DeleteVaultById(mockedVaultToDelete.Id).Result;
@@ -150,13 +166,14 @@ namespace Tests.TestUnitaire.BLL
       // Arrange
       var mockedVaultRepository = new Mock<IVaultRepository>();
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
 
       var mockedVaultToGet = new VaultModel
       {
         Name = "Test",
       };
 
-      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object);
+      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var vault = bllVault.GetVaultById(mockedVaultToGet.Id).Result;
@@ -171,6 +188,7 @@ namespace Tests.TestUnitaire.BLL
       // Arrange
       var mockedVaultRepository = new Mock<IVaultRepository>();
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
 
       var mockedVaultToGet = new VaultModel
       {
@@ -180,7 +198,7 @@ namespace Tests.TestUnitaire.BLL
       mockedVaultRepository.Setup(x => x.GetVaultById(mockedVaultToGet.Id).Result)
                           .Returns(mockedVaultToGet);
 
-      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object);
+      var bllVault = new BLLVault(mockedVaultRepository.Object, mockedUserRepository.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var vault = bllVault.GetVaultById(mockedVaultToGet.Id).Result;

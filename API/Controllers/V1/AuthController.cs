@@ -10,8 +10,10 @@ namespace API.Controllers.V1
   [ApiExplorerSettings(GroupName = "v1")]
   public class AuthController : ControllerBase
   {
+#pragma warning disable IDE0052 // Remove unread private members because it is used for TESTS
     private readonly IBLLAuthentication _bllAuthentication;
     private readonly IUserRepository _userRepository;
+#pragma warning restore IDE0052 // Remove unread private membersbecause it is used for TESTS
 
     public AuthController(IUserRepository userRepository, IBLLAuthentication bllAuthentication)
     {

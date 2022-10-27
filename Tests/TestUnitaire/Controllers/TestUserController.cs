@@ -12,18 +12,19 @@ namespace Tests.TestUnitaire.Controllers
     {
       var mockedBllUser = new Mock<IBLLUser>();
 
-      var mockedUser = new UserViewModel
+      var mockedChangePasswordModel = new ChangePasswordModel
       {
-        Password = "123!@#ABCabcD$5fds312z",
+        Current_password = "123!@#ABCabcD$5fds312z",
+        New_password = "123!@#ABCabcD$5fds312z"
       };
 
-      mockedBllUser.Setup(x => x.PatchUserPassword(1, mockedUser.Password).Result)
+      mockedBllUser.Setup(x => x.PatchUserPassword(1, mockedChangePasswordModel.Current_password, mockedChangePasswordModel.New_password).Result)
                    .Returns(false);
 
       UserController userController = new(mockedBllUser.Object);
 
       // Act
-      var isUserPatchedFail = !userController.ChangePassword(1, mockedUser).Result;
+      var isUserPatchedFail = !userController.ChangePassword(1, mockedChangePasswordModel).Result;
 
       // Assert
       Assert.IsTrue(isUserPatchedFail);
@@ -34,18 +35,19 @@ namespace Tests.TestUnitaire.Controllers
     {
       var mockedBllUser = new Mock<IBLLUser>();
 
-      var mockedUser = new UserViewModel
+      var mockedChangePasswordModel = new ChangePasswordModel
       {
-        Password = "123!@#ABCabcD$5fds312z",
+        Current_password = "123!@#ABCabcD$5fds312z",
+        New_password = "123!@#ABCabcD$5fds312z"
       };
 
-      mockedBllUser.Setup(x => x.PatchUserPassword(1, mockedUser.Password).Result)
+      mockedBllUser.Setup(x => x.PatchUserPassword(1, mockedChangePasswordModel.Current_password, mockedChangePasswordModel.New_password).Result)
                    .Returns(true);
 
       UserController userController = new(mockedBllUser.Object);
 
       // Act
-      var isUserPatchedSuccess = userController.ChangePassword(1, mockedUser).Result;
+      var isUserPatchedSuccess = userController.ChangePassword(1, mockedChangePasswordModel).Result;
 
       // Assert
       Assert.IsTrue(isUserPatchedSuccess);

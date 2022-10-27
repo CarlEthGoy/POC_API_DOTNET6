@@ -1,11 +1,13 @@
 ﻿using API.BLL;
 using API.Models.V1;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Web.Resource;
 
 namespace API.Controllers.V1
 {
-  //[RequiredScope(RequiredScopesConfigurationKey = "AzureAd:Scopes")]
-  //[Authorize]
+  [RequiredScope(RequiredScopesConfigurationKey = "AzureAd:Scopes")]
+  [Authorize]
   [ApiController]
   [ApiVersion("1.0")]
   [Route("api/v{version:apiVersion}/[controller]")]
@@ -21,9 +23,9 @@ namespace API.Controllers.V1
 
     [MapToApiVersion("1.0")]
     [HttpPatch("{user_id}/changepassword")]
-    public async Task<bool> ChangePassword(int user_id, [FromBody] UserViewModel userToPatch)
+    public async Task<bool> ChangePassword(int user_id, [FromBody] ChangePasswordModel changePasswordModel)
     {
-      bool isPasswordChanged = await _bllUser.PatchUserPassword(user_id, userToPatch.Password);
+      bool isPasswordChanged = await _bllUser.PatchUserPassword(user_id, changePasswordModel.Current_password, changePasswordModel.New_password);
       return isPasswordChanged;
     }
 

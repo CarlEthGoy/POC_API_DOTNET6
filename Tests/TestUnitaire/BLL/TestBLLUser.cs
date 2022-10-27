@@ -1,6 +1,8 @@
 ﻿using API.BLL;
 using API.Cryptography;
 using API.Database;
+using API.Enum;
+using API.Helper;
 using API.Models.V1;
 using Moq;
 
@@ -18,6 +20,8 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+      var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserViewModel = new UserViewModel
       {
@@ -40,8 +44,7 @@ namespace Tests.TestUnitaire.BLL
       mockedUserRepository.Setup(x => x.GenerateUserModelFromUserViewModel(mockedUserViewModel))
                           .Returns(mockedUserModel);
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
-
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
       // Act
       var createdUserId = bllUser.CreateUser(mockedUserViewModel).Result;
 
@@ -54,6 +57,7 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
       var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserViewModel = new UserViewModel
@@ -77,7 +81,7 @@ namespace Tests.TestUnitaire.BLL
       mockedUserRepository.Setup(x => x.GenerateUserModelFromUserViewModel(mockedUserViewModel))
                           .Returns(mockedUserModel);
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var createdUserId = bllUser.CreateUser(mockedUserViewModel).Result;
@@ -91,6 +95,8 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+      var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserToDelete = new UserModel
       {
@@ -101,7 +107,10 @@ namespace Tests.TestUnitaire.BLL
       mockedUserRepository.Setup(x => x.DeleteUserById(mockedUserToDelete.Id).Result)
         .Returns(false);
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
+      mockedAuthorizationHelper.Setup(x => x.IsRefusedToPerformActionOnUser(mockedUserToDelete.Id).Result)
+                               .Returns(true);
+
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var isDeleted = bllUser.DeleteUserById(mockedUserToDelete.Id).Result;
@@ -115,6 +124,8 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+      var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserToDelete = new UserModel
       {
@@ -123,9 +134,12 @@ namespace Tests.TestUnitaire.BLL
       };
 
       mockedUserRepository.Setup(x => x.DeleteUserById(mockedUserToDelete.Id).Result)
-        .Returns(true);
+                          .Returns(true);
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
+      mockedAuthorizationHelper.Setup(x => x.IsRefusedToPerformActionOnUser(mockedUserToDelete.Id).Result)
+                               .Returns(false);
+
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var isDeleted = bllUser.DeleteUserById(mockedUserToDelete.Id).Result;
@@ -139,6 +153,8 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+      var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserToGet = new UserModel
       {
@@ -149,7 +165,7 @@ namespace Tests.TestUnitaire.BLL
         Salt = new byte[16]
       };
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var user = bllUser.GetByUsername(mockedUserToGet.Username).Result;
@@ -163,6 +179,8 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+      var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserToGet = new UserModel
       {
@@ -176,7 +194,7 @@ namespace Tests.TestUnitaire.BLL
       mockedUserRepository.Setup(x => x.GetUserByUsername(mockedUserToGet.Username).Result)
                           .Returns(mockedUserToGet);
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var user = bllUser.GetByUsername(mockedUserToGet.Username).Result;
@@ -190,6 +208,8 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+      var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserToGet = new UserModel
       {
@@ -200,7 +220,7 @@ namespace Tests.TestUnitaire.BLL
         Salt = new byte[16]
       };
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var user = bllUser.GetUserById(mockedUserToGet.Id).Result;
@@ -214,6 +234,8 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+      var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserToGet = new UserModel
       {
@@ -227,7 +249,7 @@ namespace Tests.TestUnitaire.BLL
       mockedUserRepository.Setup(x => x.GetUserById(mockedUserToGet.Id).Result)
                           .Returns(mockedUserToGet);
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var user = bllUser.GetUserById(mockedUserToGet.Id).Result;
@@ -241,6 +263,8 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+      var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserViewModel = new UserViewModel
       {
@@ -264,7 +288,10 @@ namespace Tests.TestUnitaire.BLL
       mockedUserRepository.Setup(x => x.GetUserById(mockedUserModel.Id).Result)
                           .Returns(mockedUserModel);
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
+      mockedAuthorizationHelper.Setup(x => x.IsRefusedToPerformActionOnUser(mockedUserModel.Id).Result)
+                               .Returns(true);
+
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var isPatchFail = !bllUser.PatchUser(mockedUserModel.Id, mockedUserViewModel).Result;
@@ -278,6 +305,8 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+      var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserViewModel = new UserViewModel
       {
@@ -301,7 +330,11 @@ namespace Tests.TestUnitaire.BLL
       mockedUserRepository.Setup(x => x.GetUserById(mockedUserModel.Id).Result)
                           .Returns(mockedUserModel);
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
+
+      mockedAuthorizationHelper.Setup(x => x.IsRefusedToPerformActionOnUser(mockedUserModel.Id).Result)
+                               .Returns(false);
+
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
 
       // Act
       var isPatchSucces = bllUser.PatchUser(mockedUserModel.Id, mockedUserViewModel).Result;
@@ -315,6 +348,8 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+      var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserViewModel = new UserViewModel
       {
@@ -338,10 +373,10 @@ namespace Tests.TestUnitaire.BLL
       mockedUserRepository.Setup(x => x.GetUserById(mockedUserModel.Id).Result)
                           .Returns(mockedUserModel);
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
 
       // Act
-      var isPatchFail = !bllUser.PatchUserPassword(mockedUserModel.Id, mockedUserViewModel.Password).Result;
+      var isPatchFail = !bllUser.PatchUserPassword(mockedUserModel.Id, "123!@#abcAbc123123", mockedUserViewModel.Password).Result;
 
       // Asssert
       Assert.IsTrue(isPatchFail);
@@ -352,6 +387,8 @@ namespace Tests.TestUnitaire.BLL
     {
       // Arrange
       var mockedUserRepository = new Mock<IUserRepository>();
+      var mockedAuthorizationHelper = new Mock<IAuthorizationHelper>();
+      var mockedCryptographyUtil = new Mock<ICryptographyUtil>();
 
       var mockedUserViewModel = new UserViewModel
       {
@@ -375,10 +412,16 @@ namespace Tests.TestUnitaire.BLL
       mockedUserRepository.Setup(x => x.GetUserById(mockedUserModel.Id).Result)
                           .Returns(mockedUserModel);
 
-      var bllUser = new BLLUser(mockedUserRepository.Object);
+      mockedCryptographyUtil.Setup(x => x.VerifyHash(mockedUserViewModel.Password, mockedUserModel.Salt, mockedUserModel.Hash))
+                            .Returns(true);
+
+      mockedCryptographyUtil.Setup(x => x.IsPasswordValid(mockedUserViewModel.Password, EnumPasswordComplexity.Medium))
+                            .Returns(true);
+
+      var bllUser = new BLLUser(mockedUserRepository.Object, mockedCryptographyUtil.Object, mockedAuthorizationHelper.Object);
 
       // Act
-      var isPatchSucces = bllUser.PatchUserPassword(mockedUserModel.Id, mockedUserViewModel.Password).Result;
+      var isPatchSucces = bllUser.PatchUserPassword(mockedUserModel.Id, "123!@#abcAbc123123", mockedUserViewModel.Password).Result;
 
       // Asssert
       Assert.IsTrue(isPatchSucces);

@@ -1,6 +1,7 @@
 using API.BLL;
 using API.Cryptography;
 using API.Database;
+using API.Helper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
@@ -72,10 +73,12 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IVaultRepository, VaultRepository>();
 builder.Services.AddScoped<IPasswordRepository, PasswordRepository>();
 builder.Services.AddScoped<ICryptographyUtil, CryptographyUtil>();
+builder.Services.AddScoped<IAuthorizationHelper, AuthorizationHelper>();
 builder.Services.AddScoped<IBLLUser, BLLUser>();
 builder.Services.AddScoped<IBLLVault, BLLVault>();
 builder.Services.AddScoped<IBLLPassword, BLLPassword>();
 builder.Services.AddScoped<IBLLAuthentication, BLLAuthentication>();
+builder.Services.AddHttpContextAccessor();
 #endregion
 
 builder.Services.AddControllers();

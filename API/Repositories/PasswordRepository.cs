@@ -1,5 +1,4 @@
-﻿using API.Cryptography;
-using API.Models.V1;
+﻿using API.Models.V1;
 using Neo4j.Driver;
 
 namespace API.Database
@@ -22,9 +21,7 @@ namespace API.Database
   public class PasswordRepository : IPasswordRepository
   {
     private readonly IConfiguration _configuration;
-    private readonly ICryptographyUtil _cryptoUtil;
     private readonly IDriver _driver;
-    private bool _disposed = false;
 
     #region Database Actions
 
@@ -243,7 +240,6 @@ namespace API.Database
     #endregion Database Actions
 
     #region Cast
-
     private static List<PasswordModel> ToListPasswordModel(IEnumerable<IDictionary<string, object>> datas)
     {
       if (!datas.Any())
@@ -269,34 +265,11 @@ namespace API.Database
 
     #region Constructeur et Dispose
 
-    public PasswordRepository(IConfiguration configuration, ICryptographyUtil cryptoUtil, IDriver driver)
+    public PasswordRepository(IConfiguration configuration, IDriver driver)
     {
-      _cryptoUtil = cryptoUtil;
       _configuration = configuration;
       _driver = driver;
     }
-
-    ~PasswordRepository() => Dispose(false);
-
-    public void Dispose()
-    {
-      Dispose(true);
-      GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-      if (_disposed)
-        return;
-
-      if (disposing)
-      {
-        _driver?.Dispose();
-      }
-
-      _disposed = true;
-    }
-
     #endregion Constructeur et Dispose
   }
 }
